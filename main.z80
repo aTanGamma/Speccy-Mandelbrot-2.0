@@ -1,42 +1,8 @@
 ;   A 'simple' mandlebrot generator at full resolution bitmap
 
+;Documentation in the Readme
 
     DEVICE ZXSPECTRUM48
-
-/*----= Memory Map =----*/
-
-/*
-
-    $4000   O-----------O   Bitmap Memory
-            |           |
-    $5800   O-----------O   Colour Attributes
-            |           |
-    $5B00   O-----------O   Reserved
-            |           |
-    $5CCB   O-----------O   Free Space
-            |           |
-    $6000   O-----------O   Main Code
-            |           |
-            ¦           ¦
-            '           '
-
-*/
-
-/*
-16-bit FP explainer:
-
-0b 0000.0000 0000 0000 = 0
-
-0b 1111.1111 1111 1111 = - 1/2^12 = - 1/4096 = -0.000244
-
-0b 1000.0000 0000 0000 = min = - 8
-
-0b 0111.1111 1111 1111 = max = 7 + 4095/4096 = 7.999755...
-
-0b 1111.0000 0000 0000 = -1.0
-
-*/
-
 
 
 /*----= Global Variables =----*/
