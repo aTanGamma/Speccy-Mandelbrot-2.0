@@ -1,0 +1,314 @@
+;   A 'simple' mandlebrot generator at full resolution bitmap
+
+
+    DEVICE ZXSPECTRUM48
+
+/*----= Memory Map =----*/
+
+/*
+
+    $4000   O-----------O   Bitmap Memory
+            |           |
+    $5800   O-----------O   Colour Attributes
+            |           |
+    $5B00   O-----------O   Reserved
+            |           |
+    $5CCB   O-----------O   Free Space
+            |           |
+    $6000   O-----------O   Main Code
+            |           |
+            ¦           ¦
+            '           '
+
+*/
+
+/*
+16-bit FP explainer:
+
+0b 0000.0000 0000 0000 = 0
+
+0b 1111.1111 1111 1111 = - 1/2^12 = - 1/4096 = -0.000244
+
+0b 1000.0000 0000 0000 = min = - 8
+
+0b 0111.1111 1111 1111 = max = 7 + 4095/4096 = 7.999755...
+
+0b 1111.0000 0000 0000 = -1.0
+
+*/
+
+
+
+/*----= Global Variables =----*/
+
+Current_X = $5CD0   ;Location of current X coord (16-bit, fixed point)
+Current_Y = $5CD2   ;Location of current Y coord (16-bit, fixed point)
+
+/*----= Definitions =----*/
+
+_INITIAL_X = $E000  ;-2
+_INITIAL_Y = $1000  ;+1
+
+_X_STEP_SIZE = $0030    ;+ 3/256 = 0000.0000 0011 0000 
+_Y_STEP_SIZE = $FFD5    ;- 2/192 = 1111.1111 1101 0101
+
+_MAX_ITERATIONS = 50
+
+_SCREEN_BITMAP_START = $4000
+_BITMAP_LENGTH_POS = $1800
+_BITMAP_LENGTH_NEG = $E800
+
+_COLOUR_ATTRIBUTES_START = $5800
+_COL_ATR_LENGTH_POS = $0300
+_COL_ATR_LENGTH_NEG = $FD00
+
+_WHITE_BLACK = %01000111    ;no flash, bright, black paper, white ink
+
+/*----= Main Code =----*/
+
+    org $6000
+
+    MODULE Main_Loop
+
+
+Start
+
+;   Rough layout:
+
+;   Clear screen & Attributes
+;   setup loop for line:
+;     > Set up loop for byte
+;     > Iterate each pixel and plot result in byte
+;     > After 8 pixels, increment hl for next byte
+;     > After 32, move to next line
+
+
+    di ;Disable interrupts
+
+    ;call Setup.Clear_Bitmap_0
+
+    ld bc, $1234
+    ld de, $5678
+    call Long_Multiply.Start
+
+;    ld bc, _INITIAL_X
+;    ld de, _INITIAL_Y
+;    call Iterator.Start
+
+    ei
+    ret
+
+    ENDMODULE
+
+    MODULE Iterator
+
+X_Pos_Copy = $5CD4  ;Copies of X/Y taken at start of iteration cycle
+Y_Pos_Copy = $5CD6  ;These are also used in the calculations
+
+Next_Zr_Pos = $5CD8  ;These are used to work out the new x/y positions
+Next_Zi_Pos = $5CDA  ;Once calculated, these are moved into copy places for next iteration
+
+Start
+
+    ld (X_Pos_Copy), bc
+    ld (Y_Pos_Copy), de ;Create copy of X/Y
+
+    
+
+    ENDMODULE
+
+    MODULE Setup
+
+Clear_Bitmap_0
+
+    ld a, $00       ;Set up loops
+    ld de, _SCREEN_BITMAP_START    ;Location to put a
+    ld bc, _BITMAP_LENGTH_NEG    ;Counter to get to end of bitmap
+
+Clear_Bitmap_1
+
+    ld (de),a
+    inc de
+
+    inc c                   ;Count 1s
+    jr nz, Clear_Bitmap_1   ;After 255, roll over next byte
+
+    inc b
+    jr nz, Clear_Bitmap_1
+
+
+Set_Attributes_0
+
+    ld a, _WHITE_BLACK
+    ld de, _COLOUR_ATTRIBUTES_START
+    ld bc, _COL_ATR_LENGTH_NEG
+
+
+Set_Attributes_1
+
+    ld (de),a
+    inc de
+
+    inc c                   ;Count 1s
+    jr nz, Set_Attributes_1 ;After 255, roll over next byte
+
+    inc b
+    jr nz, Set_Attributes_1
+
+Preset_Variables
+
+    ld bc, _INITIAL_X
+    ld (Current_X), bc  ;Set start X to -2
+
+    ld bc, _INITIAL_Y
+    ld (Current_Y), bc  ;Set start Y to +1
+
+    ret
+
+    ENDMODULE
+
+    MODULE Long_Multiply  ;16-bit multiplication. Multiplies bc (Num A) by de (Num B) (Setup before-hand)
+
+/*----= Variables =----*/
+
+Num_A = $5D00   ;4-bytes to allow for shifting left
+
+Result = $5D04  ;4-byte result
+
+;Number B is held in de and is shifted in place:
+
+;   Shift d >> Carry
+;   Rotate  Carry >> e >> Carry
+;   Carry = 1 if addition needed, 0 if not
+;   Perform adition
+;   Shift A left
+;      >Load lo-byte into A, shift right, store back
+;      >Rotate next 3 bytes in order
+;   Check loop conditions
+
+
+/*----= Code =----*/
+
+Start
+
+    ld a, 0
+
+    ld (Num_A),a
+    ld (Num_A+1),a
+    
+    ld hl, Num_A+3
+    ld (hl), c
+    dec l
+    ld (hl), b  ;Puts b and c in memory in the right order
+
+    ld (Result),a
+    ld (Result+1),a
+    ld (Result+2),a
+    ld (Result+3),a
+
+    ld b, 16    ;Set loop counter
+
+R_Shift_de
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA
+
+Add_NumA
+
+    ld hl, Result+3
+
+    ccf    ;Get complement of carry flag (here will always set to 0)
+
+    ld a, (Num_A+3)
+    adc a,(hl)
+    ld (hl), a
+    dec l
+
+    ld a, (Num_A+2)
+    adc a,(hl)
+    ld (hl), a
+    dec l
+
+    ld a, (Num_A+1)
+    adc a,(hl)
+    ld (hl), a
+    dec l
+
+    ld a, (Num_A)
+    adc a,(hl)
+    ld (hl), a
+
+
+L_Shift_NumA
+
+    ld a, (Num_A+3)
+    sla a   ;a << Carry (=a7)
+    ld (Num_A+3), a
+
+    ld a, (Num_A+2)
+    rla
+    ld (Num_A+2), a
+
+    ld a, (Num_A+1)
+    rla
+    ld (Num_A+1), a
+    
+    ld a, (Num_A)
+    rla
+    ld (Num_A), a
+
+Check_Loop_Counter
+
+    djnz R_Shift_de ;Dec loop counter and loop if b != 0
+
+Condition_Result
+
+    ;Now need to divide result by 2^12 (Move down by 4 bits and only take middle 2 bytes in BC)
+
+    ;Return result in bc and highest nibble in A
+
+    ld b, 4 ;Loop counter for shifting v
+1
+    ld hl, Result
+
+    ld a, (hl)
+    srl a
+    ld (hl), a
+    inc l
+
+    ld a, (hl)
+    rra
+    ld (hl), a
+    inc l
+
+    ld a, (hl)
+    rra
+    ld (hl), a
+    inc l
+
+    ld a, (hl)
+    rra
+    ld (hl), a
+    inc l       ;Shift 3 answer bytes right by 1 bit
+
+    djnz 1B ;Loop above 3 more times
+
+Return_Answers
+
+    ld hl, Result
+    ld a, (hl)
+
+    inc l
+    ld b, (hl)
+
+    inc l
+    ld c, (hl)
+
+    ret ;Exit once finished
+
+
+    ENDMODULE
+
+    SAVESNA "mandle.sna", Main_Loop.Start
