@@ -16,11 +16,13 @@ Line_No = $5F05 ;Scanline number ───────────────�
 
 /*----= Definitions =----*/
 
-_INITIAL_X = $D800  ;-2.5
+_INITIAL_X = $E000  ;-2
 _INITIAL_Y = $1000  ;+1
 
 _X_STEP_SIZE = $0030    ;+ 3/256 = 0000.0000 0011 0000 
 _Y_STEP_SIZE = $FFD5    ;- 2/192 = 1111.1111 1101 0101
+
+_BORDER_COLOUR = 00 ;Black border
 
 _MAX_ITERATIONS = 50
 
@@ -59,171 +61,19 @@ Start
 
     ld bc, _INITIAL_X
     ld (Current_X),bc
+    ld (Iterator.Working_X),bc
 
     ld bc, _INITIAL_Y
     ld (Current_Y),bc   ;Put initial values in memory (test)
+    ld (Iterator.Working_Y),bc
 
-    call Iterator.Start
+    call Iterator.Init
 
     ei
     ret
 
     ENDMODULE
 
-    MODULE Iterator
-
-Working_X = $5CD0   ;Initially copies of Current_X / Current_Y
-Working_Y = $5CD2   ; Are used each iteration as Z_(-1)
-
-Next_X = $5CD4  ;These are used to work out the new x/y positions
-Next_Y = $5CD6  ;Once calculated, these are moved into copy places for next iteration
-
-X2 = $5CD8  ;X^2
-Y2 = $5CDB  ;Y^2    Both 3 Bytes to accommodate extra upper nibble
-
-Iteration = $5CDE   ;Iteration counter
-
-Temp_Space = $5D00  ;16 bytes free for general purpose
-
-
-/*
-    General Proc:
-
-    Z1 = Z0^2 + XY
-
-    X' = X^2 - Y^2 + X
-
-    Y' = 2*X*Y + Y
-
-    Start calculations 'after' first iteration - Z1 = 0+0j + X+Yj, so Z1 = X+Yj
-    For very large coordinates, this immediately rejects them
-
-    Method:
-
-        - Calculate X2 and Y2 from current screen coords (skips first iteration)
-
-    +---> Check if X2 + Y2 > 4
-    |     +-> If yes, exit and return iteration number (always 1+)
-    |   - Next_X = X2 - Y2 + Current_X
-    |   - Next_Y = ((X*Y) << 2) + Current_Y
-    |   - Increment iteration counter
-    |   - Check if iteration number > _MAX_ITERATIONS
-    |     +-> If yes, exit and return iteration number (_MAX_ITERATIONS)
-    |   - Calculate X2 and Y2   ; Just hear to even the look of this bit
-    +---- Loop
-
-*/
-
-Start
-    
-    ld a, 1
-    ld (Iteration), a   ;Initialise iteration counter to 1 (explained above)
-
-Initial_Calc_X2
-
-    ld bc, (Current_X)
-    ld d, b
-    ld e, c ;Slightly quicker than loading from memory (-2 cycles)
-    call Long_Multiply.Start    ;Calculates X^2, returns result in BC (and A)
-
-    ld hl, X2
-    ld (hl), a
-    inc l
-    ld (hl), bc ;Store X^2 in X2
-
-Initial_Calc_Y2
-
-    ld bc, (Current_Y)
-    ld d,b
-    ld e,c
-    call Long_Multiply.Start    ;Calculates X^2, returns result in BC (and A)
-
-    ld hl, Y2
-    ld (hl), a
-    inc l
-    ld (hl), bc ;Store X^2 in X2
-
-Check_Radius_0
-
-    ld hl, (X2+1)
-    ld bc, (Y2+1)
-
-    adc hl, bc  ;hl = >X2 + >Y2
-
-    ld b, h
-    ld c, l
-    ld hl, Temp_Space+2
-
-    ld (hl), c
-    dec l
-    ld (hl), b  ;Put partial result in memory (big endian)
-    dec l   ;hl = Temp_Space+0
-
-    ld a, (X2+1)
-    ld b, a     ;Load HiX into b
-    ld a, (Y2+1)    ;Load HiY into a
-
-    adc b   ;a = HiX + HiY
-
-    ld (hl), a  ;Temp_Space = X2 + Y2
-
-    inc l   ;hl = Temp_Space+1 (Frac)
-    inc l   ;hl = Temp_Space+2 (Whl)
-    ld a, (hl) 
-    
-    or a    ;Clear carry flag
-    sub $40  ;Take away 4 from X2 + Y2
-    ld (hl), a  ;Return result to proper place
-
-;   If X2+Y2 < 4, R < 0
-;   If X2+Y2 = 4, R == 0
-;   If X2+Y2 > 4, R > 0
-
-    ld hl, (Temp_Space+2)   ;Using 'ld a, (hl)' is a little faster than 'ld a, (nn)'
-
-    ld a,(hl)   ;Load lowest byte again
-    or a    ;Clear Carry flag
-    sub 1  ;take smallest possible value away
-    ld (hl), a    ; Return value to memory
-
-    jr c, Check_Radius_1    ;If borrow not needed, skip ahead
-
-    dec l
-    ld a,(hl)   ;Load middle byte
-    or a    ;Clear Carry flag
-    sub 1   ;Decrement byte
-    ld (hl), a  ;Put modified val. back    
-
-    jr nc, Check_Radius_1
-
-    dec l
-    ld a, (hl)
-    or a
-    sub 1
-    ld (hl), a  ;As above for top byte
-
-
-Check_Radius_1
-
-;   Now, R' >= 0 if R > 4
-
-    ld a, (Temp_Space)
-
-    bit 7, a    ;Test sign bit of R'
-
-    jp nz, Exit_Iteration
-
-
-
-
-Exit_Iteration  ;Pass back iteration counter in A
-
-    ld a, (Iteration)
-    
-    ret 
-
-
-    ENDMODULE
 
 
 
@@ -266,6 +116,12 @@ Set_Attributes_1
 
     inc b
     jr nz, Set_Attributes_1
+
+Set_Border
+
+    ld a, 0
+    ld c, 254
+    out (c), a  ;Set border colour Black
 
 Preset_Variables
 
