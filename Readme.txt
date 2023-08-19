@@ -1,5 +1,12 @@
 A 'simple' program for zx spectrum 48k to generate a hi-res mandlebrot set
 
+Files required for proper building:
+
+    - Main.z80 - Main code loop
+    - Maths.z80 - Maths functions
+
+
+
 O----= Memory Map =-----------------------------O
 |                                               |
 |   $0000   O-----------O   Speccy Rom          |
@@ -55,18 +62,22 @@ O-----------------------------------------------------------O
 
 O----= Multiplication Algorithm =---------------------------O
 |                                                           |
-|   Standard-ish shift/add algorithm:                       |
+|   Relatively standard shift/add routine                   |
 |                                                           |
-|       - Load Num_A into memory, Num_A in a register       |
-|   +---> Shift Num_B right (0 -> B7 ; B0 -> Carry)         |
-|   |     +-> If Carry set, add contents of A to a Result   |
-|   |   - Shift Num_A left 1 bit (A = 2*A)                  |
-|   +---- Decrement loop counter                            |
+|       - Check the signs of 1 Num_A and Num_B              |
+|       - Make both positive and count number of negatives  |
 |                                                           |
-|       - Shift Result right 4 bits (Result = Result / 16)  |
-|       - Take middle 2 bytes from Result as final answer   |
-|       - Remaining upper nibble put in Acc for reference   |
+|   +---> B >> 1 to C (Carry = B0)                          |
+|   |     +-> If C = 1, add Num_A to Result                 |
+|   |   - A << 1                                            |
+|   +---- Decrement counter (from 16)                       |
 |                                                           |
+|       - Result >> 4                                       |
+|       - No_Negatives >> 1                                 |
+|       +-> If C = 1, negate answer:                        |
+|           - xor $FFFFFFFF                                 |
+|           - add 1                                         |
+|       - Return answer in abc                              |
 O-----------------------------------------------------------O
 
 O----= Division Algorithm =-----------------------------------------------------------------O

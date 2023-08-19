@@ -1,0 +1,261 @@
+; This file contains maths functions
+    
+    
+    MODULE Long_Multiply  ;16-bit multiplication. Multiplies bc (Num A) by de (Num B) (Setup before-hand); Returns Result in BC (and A)
+
+/*---------= Variables =---------*/
+
+Num_A = $5D00   ;4-bytes to allow for shifting left
+
+Result = $5D04  ;4-byte result
+
+No_Negs = $5D08
+
+/*---------= Code =---------*/
+
+Start
+
+    ld a, 0
+    ld hl, Num_A
+
+    ld (hl), a
+    inc l
+    ld (hl), a  ;Clear Hi-bytes of Num_A
+    .3 inc l    ;Increment pointer to Result
+
+    ld (hl), a
+    inc l
+    ld (hl), a
+    inc l
+    ld (hl), a
+    inc l
+    ld (hl), a  ;Cleared Result
+
+    ld l, 0     ;L will count the number of negative numbers in the next bit
+    
+Sign_Check_bc   ;Note: A = 0 still
+
+    bit 7, b    ;Check if bc negative
+    jr z, Sign_Check_de
+
+    inc l       ;Count 1 negative number
+
+    ld a, $FF   ;Setup value to xor with
+
+    xor b       ;xor with FF (get complement)
+    ld b, a     ;Return comp to b
+
+    ld a, $FF     ;As above for c
+    xor c
+    ld c, a
+
+    inc bc      ;Just adds 1 (properly) to bc
+
+Sign_Check_de
+
+    bit 7, d    ;Check if de negative
+    jr z, Setup_Memory
+
+    inc l       ;Count 1 negative number
+
+    ld a, $FF   ;Setup value to xor with
+
+    xor d       ;xor with FF (get complement)
+    ld d, a     ;Return comp to b
+
+    ld a, $FF     ;As above for c
+    xor e
+    ld e, a
+
+    inc de      ;Just adds 1 (properly) to bc
+
+Setup_Memory
+
+    ld a, l
+    ld (No_Negs), a ;Store number of negative numbers in memory
+
+    ld hl, Num_A+3
+    ld (hl), c
+    dec l
+    ld (hl), b  ;Puts b and c in Num_A in the right order
+
+    ld b, 16    ;Set loop counter
+
+R_Shift_de
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA
+
+Add_NumA
+
+    ld hl, Result+3   ;Lowest address
+
+    or a    ;Get complement of carry flag (here will always set to 0)
+
+    ld a, (Num_A+3)
+    adc a,(hl)
+    ld (hl), a
+    dec l
+
+    ld a, (Num_A+2)
+    adc a,(hl)
+    ld (hl), a
+    dec l
+
+    ld a, (Num_A+1)
+    adc a,(hl)
+    ld (hl), a
+    dec l
+
+    ld a, (Num_A)
+    adc a,(hl)
+    ld (hl), a
+
+
+L_Shift_NumA
+
+    push bc ;Save bc to stack
+
+;   Shifts A left using bc instead of a and hl - slightly faster and neater
+
+    ld hl, Num_A+3
+
+    ld c, (hl)
+    dec l
+    ld b, (hl)
+
+    sla c
+    rl b
+
+    ld (hl), b
+    inc l
+    ld (hl), c
+    .2 dec l
+
+    ld c, (hl)
+    dec l
+    ld b, (hl)
+
+    rl c
+    rl b
+
+    ld (hl), b
+    inc l
+    ld (hl), c
+
+    pop bc  ;Restore bc from stack
+
+Check_Loop_Counter
+
+    djnz R_Shift_de ;Dec loop counter and loop if b != 0
+
+Shift_Result
+
+    ;Now need to divide result by 2^12 (Move down by 4 bits and only take middle 2 bytes in BC)
+
+    ;Return result in bc and highest nibble in A
+
+    ld hl, Result+3
+    ld e, (hl)
+    dec l
+    ld c,(hl)
+    dec l
+    ld b, (hl)
+    dec l
+    ld d, (hl)  ;Now Result is stored, in order in reg. dbce (weird order to return answer easier)
+
+    sra d
+    rr b
+    rr c
+    rr e    ;1
+
+    sra d
+    rr b
+    rr c
+    rr e    ;2
+    
+    sra d
+    rr b
+    rr c
+    rr e    ;3
+    
+    sra d
+    rr b
+    rr c
+    rr e    ;4
+
+;   Much quicker than previous method using RAM, hl & a (+ no loops required)
+;   bc already contains answer, just needs to be negated or not
+
+Adjust_Result_Sign
+
+    ld a, (No_Negs)
+    sra a   ;If there were an odd number of negative numbers, negate answer
+
+    jr nc, Return_Answers    ;Jump if not negating
+
+    ld a, $FF   ;invert each byte of Result in series
+    xor d
+    ld d, a
+
+    ld a, $FF
+    xor b
+    ld b, a
+
+    ld a, $FF
+    xor c
+    ld c, a
+
+    ld a, $FF
+    xor e
+;   Skip returning e as more calculations to come
+
+    or a    ;Reset Carry
+
+    add 1
+    ld e, a ;Return e'+1
+    
+    ld a, c ;Each step will add 0+Carry to next byte, cascading carry down if necessary
+    adc 0
+    ld c, a
+
+    ld a, b
+    adc 0
+    ld b, a
+
+    ld a, d
+    adc 0
+;   Skip returning d'+C as unnecessary
+
+;   Now Result = R'+1 = -R (except top byte)
+
+Return_Answers
+
+;   bc already contains answer
+;   a already contains hi-byte
+
+;   a holds true highest-byte of answer, +ve or -ve
+;   bc holds small units and fractional part
+
+
+
+    ret ;Exit once finished
+
+
+    ENDMODULE
+
+/*
+    MODULE Long_Adder
+
+/*---------= Variables =---------*/
+
+
+
+
+/*---------= Code =---------*/
+
+Start
+
+*/
