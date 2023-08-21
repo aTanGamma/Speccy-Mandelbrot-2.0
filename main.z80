@@ -15,8 +15,9 @@ X_Pixel = $5F04 ;The X-pos in px on the screen ├───> For working out Scr
 Line_No = $5F05 ;Scanline number ──────────────┘
 ;^ In reverse order for loading into bc
 
-
 Byte_To_Fill = $5F07
+
+Timer = $5F08
 
 /*----= Definitions =----*/
 
@@ -28,7 +29,7 @@ _Y_STEP_SIZE = $FFD5    ;- 2.25/192 = 1111.1111 1101 0101
 
 _BORDER_COLOUR = 0 ;Black border
 
-_MAX_ITERATIONS = 255
+_MAX_ITERATIONS = 100
 
 _SCREEN_BITMAP_START = $4000
 _BITMAP_LENGTH = $1800
@@ -57,7 +58,15 @@ Start
 ;     > After 32, move to next line
 
 
-    di ;Disable interrupts
+    di
+
+    im 2
+    ld a, $39   ;Makes interrupt jump to somewhere in page $39xx - All bytes are $FF
+    ld i, a     ;CPU then goes to location $FFFF to execute a relative jump, which happens to make jr $F3, so a jp can be put 13 bytes behind $FFFF
+
+    ei
+
+    halt
     
     ld a, 0
     ld c, 254
@@ -161,7 +170,8 @@ Step_Y_Coord
 
 Done
 
-    ei
+    im 1
+
     ret
 
     ENDMODULE
@@ -203,6 +213,10 @@ Preset_Variables
     ld (Line_No), a
     ld (Byte_To_Fill), a    ;Reset screen stuff
 
+    ld (Timer), a
+    ld (Timer+1), a
+    ld (Timer+2), a     ;Reset Timer
+
     ld bc, _INITIAL_X
     ld (Current_X),bc
     ld (Iterator.Working_X),bc
@@ -217,8 +231,13 @@ Preset_Variables
 
 
 
+
+
     INCLUDE "Iterator.z80"
 
     INCLUDE "Maths.z80"
+
+    INCLUDE "Interrupt_Stuff.z80"
+
 
     SAVESNA "mandle.sna", Main_Loop.Start

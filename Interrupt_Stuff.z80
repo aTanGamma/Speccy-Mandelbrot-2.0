@@ -1,0 +1,42 @@
+    MODULE Interrupt_Timer
+
+Start
+
+    push af
+
+    ld a, (Timer+2)
+    or a
+    add 1
+    ld (Timer+2), a
+
+    ld a, (Timer+1)
+    adc 0
+    ld (Timer+1), a
+
+    ld a, (Timer)
+    adc 0
+    ld (Timer), a
+
+    pop af
+
+    ei
+    reti
+
+    ENDMODULE
+    
+    
+    MODULE Interrupt_Jump_Proper
+    
+    org ($FFF4)
+    
+    jp Interrupt_Timer.Start
+    
+    
+    ENDMODULE
+    
+    
+    MODULE Interrupt_Jump_Half
+    org $FFFF
+
+    BYTE $18
+    ENDMODULE
