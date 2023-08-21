@@ -21,14 +21,14 @@ Byte_To_Fill = $5F07
 /*----= Definitions =----*/
 
 _INITIAL_X = $E000  ;-2
-_INITIAL_Y = $1400  ;+1.25
+_INITIAL_Y = $1000  ;+1.25
 
-_X_STEP_SIZE = $0028    ;+ 3/256 = 0000.0000 0011 0000 
-_Y_STEP_SIZE = $FFCA    ;- 2.5/192 = 1111.1111 1100 1010
+_X_STEP_SIZE = $0028    ;+ 2.5/256 = 0000.0000 0011 0000 
+_Y_STEP_SIZE = $FFD5    ;- 2.25/192 = 1111.1111 1101 0101
 
 _BORDER_COLOUR = 0 ;Black border
 
-_MAX_ITERATIONS = 50
+_MAX_ITERATIONS = 255
 
 _SCREEN_BITMAP_START = $4000
 _BITMAP_LENGTH = $1800
@@ -64,15 +64,8 @@ Start
     out (c), a  ;Set border colour Black
 
 Main
-    ld bc, _INITIAL_X
-    ld (Current_X),bc
-    ld (Iterator.Working_X),bc
 
-    ld bc, _INITIAL_Y
-    ld (Current_Y),bc   ;Put initial values in memory (test)
-    ld (Iterator.Working_Y),bc
-
-    ;call Setup.Clear_Bitmap
+    call Setup.Clear_Bitmap
 
 Iterator
 
