@@ -10,29 +10,31 @@
 Current_X = $5F00   ;Location of current X coord (16-bit, fixed point)
 Current_Y = $5F02   ;Location of current Y coord (16-bit, fixed point)
 
-Screen_Address = $5CE4  ;Address of current byte to write to
-Pixel_X = $5F04 ;Screen pixel number (0 - 255) ───┐
-Line_No = $5F05 ;Scanline number ─────────────────┴───> For working out Screen Address
+X_Byte = $5F06  ;Screen byte number (0 - 31) ──┐
+X_Pixel = $5F04 ;The X-pos in px on the screen ├───> For working out Screen Address
+Line_No = $5F05 ;Scanline number ──────────────┘
+;^ In reverse order for loading into bc
+
+
+Byte_To_Fill = $5F07
 
 /*----= Definitions =----*/
 
 _INITIAL_X = $E000  ;-2
-_INITIAL_Y = $1000  ;+1
+_INITIAL_Y = $1400  ;+1.25
 
-_X_STEP_SIZE = $0030    ;+ 3/256 = 0000.0000 0011 0000 
-_Y_STEP_SIZE = $FFD5    ;- 2/192 = 1111.1111 1101 0101
+_X_STEP_SIZE = $0028    ;+ 3/256 = 0000.0000 0011 0000 
+_Y_STEP_SIZE = $FFCA    ;- 2.5/192 = 1111.1111 1100 1010
 
-_BORDER_COLOUR = 00 ;Black border
+_BORDER_COLOUR = 0 ;Black border
 
 _MAX_ITERATIONS = 50
 
 _SCREEN_BITMAP_START = $4000
-_BITMAP_LENGTH_POS = $1800
-_BITMAP_LENGTH_NEG = $E800
+_BITMAP_LENGTH = $1800
 
 _COLOUR_ATTRIBUTES_START = $5800
-_COL_ATR_LENGTH_POS = $0300
-_COL_ATR_LENGTH_NEG = $FD00
+_COL_ATR_LENGTH = $0300
 
 _WHITE_BLACK = %01000111    ;no flash, bright, black paper, white ink
 
@@ -51,14 +53,17 @@ Start
 ;   setup loop for line:
 ;     > Set up loop for byte
 ;     > Iterate each pixel and plot result in byte
-;     > After 8 pixels, increment hl for next byte
+;     > After 8 pixels, increment hl for next byte & plot byte
 ;     > After 32, move to next line
 
 
     di ;Disable interrupts
+    
+    ld a, 0
+    ld c, 254
+    out (c), a  ;Set border colour Black
 
-;    call Setup.Clear_Bitmap_0
-
+Main
     ld bc, _INITIAL_X
     ld (Current_X),bc
     ld (Iterator.Working_X),bc
@@ -67,55 +72,129 @@ Start
     ld (Current_Y),bc   ;Put initial values in memory (test)
     ld (Iterator.Working_Y),bc
 
-    call Iterator.Init
+    ;call Setup.Clear_Bitmap
+
+Iterator
+
+    call Iterator.Init  ;Returns #iterations in a
+
+Determine_Pixel_State
+
+    or a
+    cp _MAX_ITERATIONS
+
+    ccf
+    
+    jp nz, Rotate_In_Pixel   ;Skip if iterations < 51
+
+    scf     ;If max. iterations reached, set C
+Rotate_In_Pixel
+    
+    ld a, (Byte_To_Fill)
+    rla
+    ld (Byte_To_Fill), a    ;Put 1 pixel in a holding byte (will be plotted every 8 px)
+
+Inc_X_Px
+
+    ld a, (X_Pixel)
+    inc a
+    ld (X_Pixel), a ;Increment Pixel position
+
+    and %00000111   ;Xpx % 8
+
+    jr z, Inc_X_Byte
+
+Step_X_Coord
+
+    ld bc, (Current_X)
+    ld hl, _X_STEP_SIZE
+
+    add hl, bc  ;Step X coord to next pixel
+
+    ld (Current_X), hl  ;Return to memory
+
+    jr Iterator ;Now calculate the next pixel
+
+Inc_X_Byte
+
+    ld a, (Byte_To_Fill)
+    ld bc, (Line_No)
+    call Byte_Plotter.Start ;Plot finished byte
+
+    ld bc, (Line_No)
+    ld a, 191
+    sub c
+    ld c, a
+    ld a, (Byte_To_Fill)
+    call Byte_Plotter.Start ;Mirror byte to lower half of screen
+
+    xor a
+    ld (Byte_To_Fill), a
+
+    ld a, (X_Byte)
+    inc a
+    ld (X_Byte), a  ;Step to next byte
+
+    and %00011111   ;Byte# % 32
+
+    jr nz, Step_X_Coord ;If next byte != 32 (or 0), step X as usual
+
+    xor a
+    ld (X_Byte), a  ;Reset to 0
+
+Inc_Line_No
+
+    ld a, (Line_No)
+    inc a
+    ld (Line_No), a
+
+    cp 96
+
+    jr z, Done
+
+    ld bc, _INITIAL_X
+    ld (Current_X), bc  ;Reset X_Pos to -2
+
+Step_Y_Coord
+
+    ld bc, (Current_Y)
+    ld hl, _Y_STEP_SIZE
+
+    add hl, bc
+
+    ld (Current_Y), hl
+
+    jr Iterator
+
+Done
 
     ei
     ret
 
     ENDMODULE
 
-
-
-
-
-
     MODULE Setup
 
-Clear_Bitmap_0
+Clear_Bitmap
 
     ld a, $00       ;Set up loops
-    ld de, _SCREEN_BITMAP_START    ;Location to put a
-    ld bc, _BITMAP_LENGTH_NEG    ;Counter to get to end of bitmap
+    ld hl, _SCREEN_BITMAP_START
+    ld (hl), a
+    ld de, _SCREEN_BITMAP_START+1
+    ld bc, _BITMAP_LENGTH
 
-Clear_Bitmap_1
-
-    ld (de),a
-    inc de
-
-    inc c                   ;Count 1s
-    jr nz, Clear_Bitmap_1   ;After 255, roll over next byte
-
-    inc b
-    jr nz, Clear_Bitmap_1
+    ldir
 
 
-Set_Attributes_0
+Set_Attributes
 
     ld a, _WHITE_BLACK
-    ld de, _COLOUR_ATTRIBUTES_START
-    ld bc, _COL_ATR_LENGTH_NEG
+    ld hl, _COLOUR_ATTRIBUTES_START
+    ld (hl), a
+    ld de, _COLOUR_ATTRIBUTES_START+1
+    ld bc, _COL_ATR_LENGTH
 
-
-Set_Attributes_1
-
-    ld (de),a
-    inc de
-
-    inc c                   ;Count 1s
-    jr nz, Set_Attributes_1 ;After 255, roll over next byte
-
-    inc b
-    jr nz, Set_Attributes_1
+    ldir
 
 Set_Border
 
@@ -125,15 +204,27 @@ Set_Border
 
 Preset_Variables
 
+    ld a, 0
+    ld (X_Byte), a
+    ld (X_Pixel), a
+    ld (Line_No), a
+    ld (Byte_To_Fill), a    ;Reset screen stuff
+
     ld bc, _INITIAL_X
     ld (Current_X),bc
+    ld (Iterator.Working_X),bc
 
     ld bc, _INITIAL_Y
-    ld (Current_Y),bc   ;Put initial values in memory
+    ld (Current_Y),bc
+    ld (Iterator.Working_Y),bc
 
     ret
 
     ENDMODULE
+
+
+
+    INCLUDE "Iterator.z80"
 
     INCLUDE "Maths.z80"
 

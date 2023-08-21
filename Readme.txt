@@ -5,7 +5,11 @@ Files required for proper building:
     - Main.z80 - Main code loop
     - Maths.z80 - Maths functions
 
+Box drawing characters:
 
+░ ▒ ▓ █ │ ┤ ┘ ┌ ┐ └ ┴ ┬ ├ ─ ┼ ╣ ║ ╗ ╝ ╚ ╔ ╩ ╦ ╠ ═ ╬ ▄ ¦ ■
+
+Docs:
 
 O----= Memory Map =-----------------------------O
 |                                               |
@@ -95,3 +99,18 @@ O----= Division Algorithm =-----------------------------------------------------
 |   Not used in this prg                                                                    |
 |                                                                                           |
 O-------------------------------------------------------------------------------------------O
+
+O----= Spectrum Screen Addresses =--------------------------O
+|                                                           |
+|   Addressing byte in screen memory for a given X and Y:   |
+|                                                           |
+|   Ob 0100 0000 0000 0000                                  |
+|      \_/\_/\_/ \_/\____/                                  |
+|       │  │  │   │  │                                      |
+|       │  │  │   │  └────> X potition                      |
+|       │  │  │   └───────> Y5, Y4, Y3                      |
+|       │  │  └───────────> Y2, Y1, Y0                      |
+|       │  └──────────────> Y6, Y7                          |
+|       └─────────────────> Fixed @ 010                     |
+|                                                           |
+O-----------------------------------------------------------O

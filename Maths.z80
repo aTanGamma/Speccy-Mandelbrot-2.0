@@ -35,7 +35,7 @@ Start
     
 Sign_Check_bc   ;Note: A = 0 still
 
-    bit 7, b    ;Check if bc negative
+    bit 7, b    ;Check if bc negative; If bit 7 set, Z = 0
     jr z, Sign_Check_de
 
     inc l       ;Count 1 negative number
@@ -74,14 +74,13 @@ Setup_Memory
     ld a, l
     ld (No_Negs), a ;Store number of negative numbers in memory
 
-    ld hl, Num_A+3
-    ld (hl), c
-    dec l
-    ld (hl), b  ;Puts b and c in Num_A in the right order
+    ld (Num_A+2), bc    ;Put bc in Num_a
 
     ld b, 16    ;Set loop counter
 
 R_Shift_de
+
+    push bc ;Counter -> Stack
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
@@ -89,65 +88,46 @@ R_Shift_de
     jr nc, L_Shift_NumA
 
 Add_NumA
+    
+    or a    ;Clear flags
 
-    ld hl, Result+3   ;Lowest address
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
 
-    or a    ;Get complement of carry flag (here will always set to 0)
+    add hl, bc  ;Add low-bytes of R and A together
 
-    ld a, (Num_A+3)
-    adc a,(hl)
-    ld (hl), a
-    dec l
+    ld (Result+2), hl
 
-    ld a, (Num_A+2)
-    adc a,(hl)
-    ld (hl), a
-    dec l
+    ld bc, (Num_A)
+    ld hl, (Result)
 
-    ld a, (Num_A+1)
-    adc a,(hl)
-    ld (hl), a
-    dec l
+    adc hl, bc  ;Add Hi-Bytes of R and A
 
-    ld a, (Num_A)
-    adc a,(hl)
-    ld (hl), a
+    ld (Result), hl
 
 
 L_Shift_NumA
 
-    push bc ;Save bc to stack
 
 ;   Shifts A left using bc instead of a and hl - slightly faster and neater
 
-    ld hl, Num_A+3
 
-    ld c, (hl)
-    dec l
-    ld b, (hl)
-
+    ld bc, (Num_A+2)
     sla c
     rl b
 
-    ld (hl), b
-    inc l
-    ld (hl), c
-    .2 dec l
+    ld (Num_A+2), bc
 
-    ld c, (hl)
-    dec l
-    ld b, (hl)
-
+    ld bc, (Num_A)
     rl c
     rl b
 
-    ld (hl), b
-    inc l
-    ld (hl), c
+    ld (Num_A), bc
 
-    pop bc  ;Restore bc from stack
 
 Check_Loop_Counter
+
+    pop bc  ;Restore bc from stack
 
     djnz R_Shift_de ;Dec loop counter and loop if b != 0
 
@@ -157,14 +137,14 @@ Shift_Result
 
     ;Return result in bc and highest nibble in A
 
-    ld hl, Result+3
-    ld e, (hl)
-    dec l
-    ld c,(hl)
-    dec l
+    ld hl, Result
     ld b, (hl)
-    dec l
-    ld d, (hl)  ;Now Result is stored, in order in reg. dbce (weird order to return answer easier)
+    inc l
+    ld d,(hl)
+    inc l
+    ld e, (hl)
+    inc l
+    ld c, (hl)  ;Now Result is stored, in order in reg. dbce (weird order to return answer easier)
 
     sra d
     rr b
@@ -192,13 +172,11 @@ Shift_Result
 Adjust_Result_Sign
 
     ld a, (No_Negs)
-    sra a   ;If there were an odd number of negative numbers, negate answer
+    or a
+    rra   ;If there were an odd number of negative numbers, negate answer
 
     jr nc, Return_Answers    ;Jump if not negating
 
-    ld a, $FF   ;invert each byte of Result in series
-    xor d
-    ld d, a
 
     ld a, $FF
     xor b
@@ -206,27 +184,11 @@ Adjust_Result_Sign
 
     ld a, $FF
     xor c
-    ld c, a
+    ld c, a ;Invert bc
 
-    ld a, $FF
-    xor e
-;   Skip returning e as more calculations to come
+    inc bc  ;Add 1 to bc
 
-    or a    ;Reset Carry
 
-    add 1
-    ld e, a ;Return e'+1
-    
-    ld a, c ;Each step will add 0+Carry to next byte, cascading carry down if necessary
-    adc 0
-    ld c, a
-
-    ld a, b
-    adc 0
-    ld b, a
-
-    ld a, d
-    adc 0
 ;   Skip returning d'+C as unnecessary
 
 ;   Now Result = R'+1 = -R (except top byte)
@@ -246,6 +208,43 @@ Return_Answers
 
     ENDMODULE
 
+    MODULE Byte_Plotter
+Start
+;   Plots a given byte to the screen at a given line and byte no.
+
+;   Inputs: a = byte to plot
+;           b = X (Byte on screen)
+;           c = Y (Scanline)
+
+;   Constructs screen address into hl
+
+    push af  ;Push a for safekeeping
+    
+    ld a, c 
+    and %00111000   ;Extract Y5,4,3
+    .2 rla   ;Shift to top of byte
+    add b   ;Low-byte finished
+    ld l, a ; l holds final value
+
+    ld a, c
+    and %00000111   ;Extract Y2,1,0
+    ld b, a ;Half finished
+    
+    ld a, c
+    and %11000000   ;Extract Y7,6
+    .3 rra   ;Move to correct position
+    add b   ;All X/Y bits in place
+    or %01000000   ;Finish by putting upper bits in
+    ld h, a ;Finished address in hl
+
+    pop af   ;Return a
+
+    ld (hl), a  ;Store byte
+
+    ret
+
+    ENDMODULE
+
 /*
     MODULE Long_Adder
 
@@ -257,5 +256,8 @@ Return_Answers
 /*---------= Code =---------*/
 
 Start
+
+
+    ENDMODULE
 
 */

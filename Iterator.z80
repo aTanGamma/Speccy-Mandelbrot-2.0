@@ -47,15 +47,7 @@ Temp_Space = $5D00  ;16 bytes free for general purpose
 
 Init
 
-    ei
-    halt
-    di  ;Make routine start at top of frame (debug)
-
-    ld a, 2
-    ld c, 254
-    out (c), a  ;Set border colour red (debug)
-
-    ld a, _MAX_ITERATIONS
+    ld a, 0
     ld (Iteration), a   ;Initialise iteration counter to MAX
 
     ld bc, (Current_X)
@@ -78,9 +70,9 @@ Calc_Y2
     ld bc, (Working_Y)
     ld d,b
     ld e,c
-    call Long_Multiply.Start    ;Calculates X^2, returns result in BC (and A)
+    call Long_Multiply.Start    ;Calculates Y^2, returns result in BC (and A)
 
-    ld (Y2), bc ;Store X^2 in X2
+    ld (Y2), bc ;Store Y^2 in Y2
 
 Check_Radius
 
@@ -95,12 +87,10 @@ Check_Radius
 
     add hl, bc  ;hl = X2 + Y2
     
-    dec hl  ;hl = R2 - $0001
+    ld a, $40
+    sub h
 
-    ld a, h
-    sub $40     ;a = Hi-byte of R2 - $4000
-
-    jp p, Exit
+    jp m, Exit
 
 Calc_Next_X
 
@@ -124,9 +114,9 @@ Calc_Next_Y
 ;   bc holds answers
 
     sla c
-    rl b    ;bc = 2 * X * Y
+    rl b    ;bc = 2 * X * Y + Y0
 
-    ld hl, (Working_Y)
+    ld hl, (Current_Y)
     add hl, bc  ;hl = Next_Y
 
 Move_Next_Working_Coords
@@ -139,7 +129,8 @@ Move_Next_Working_Coords
 Count_Iterations
 
     ld a, (Iteration)
-    dec a
+    inc a
+    cp _MAX_ITERATIONS
     ld (Iteration), a
 
     jp nz, Calc_X2
@@ -149,14 +140,6 @@ Exit
 ;   Iterations = 51 - b
     
     ld a, (Iteration)
-    ld b, a
-    ld a, 51
-    
-    sub b
-
-    ld a, 0
-    ld c, 254
-    out (c), a  ;Set border colour black (Debug)
 
     ret ;Number of iterations returned in a
 
