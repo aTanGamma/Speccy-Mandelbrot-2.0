@@ -29,7 +29,7 @@ _Y_STEP_SIZE = $FFD5    ;- 2.25/192 = 1111.1111 1101 0101
 
 _BORDER_COLOUR = 0 ;Black border
 
-_MAX_ITERATIONS = 100
+_MAX_ITERATIONS = 5
 
 _SCREEN_BITMAP_START = $4000
 _BITMAP_LENGTH = $1800
@@ -37,7 +37,12 @@ _BITMAP_LENGTH = $1800
 _COLOUR_ATTRIBUTES_START = $5800
 _COL_ATR_LENGTH = $0300
 
-_WHITE_BLACK = %01000111    ;no flash, bright, black paper, white ink
+_WHITE_BLACK = %01111000    ;no flash, bright, black paper, white ink
+
+_SCALE_IMAGE_LOCATION = $7000
+_SCALE_IMAGE_SIZE = 6144
+
+_FONT_LOCATION = $8C00  ;Also the first Character
 
 /*----= Main Code =----*/
 
@@ -74,7 +79,7 @@ Start
 
 Main
 
-    call Setup.Clear_Bitmap
+    call Setup.Load_Scale
 
 Iterator
 
@@ -121,14 +126,14 @@ Inc_X_Byte
 
     ld a, (Byte_To_Fill)
     ld bc, (Line_No)
-    call Byte_Plotter.Start ;Plot finished byte
+    call Xor_Byte_Plotter.Start ;Plot finished byte
 
     ld bc, (Line_No)
     ld a, 191
     sub c
     ld c, a
     ld a, (Byte_To_Fill)
-    call Byte_Plotter.Start ;Mirror byte to lower half of screen
+    call Xor_Byte_Plotter.Start ;Mirror byte to lower half of screen
 
     xor a
     ld (Byte_To_Fill), a
@@ -170,21 +175,26 @@ Step_Y_Coord
 
 Done
 
-    im 1
+    di
 
+    INCLUDE "Timer_Msg.z80"
+
+
+End
+
+    im 1
+    ei
     ret
 
     ENDMODULE
 
     MODULE Setup
 
-Clear_Bitmap
+Load_Scale
 
-    ld a, $00       ;Set up loops
-    ld hl, _SCREEN_BITMAP_START
-    ld (hl), a
-    ld de, _SCREEN_BITMAP_START+1
-    ld bc, _BITMAP_LENGTH
+    ld de, _SCREEN_BITMAP_START
+    ld hl, _SCALE_IMAGE_LOCATION
+    ld bc, _SCALE_IMAGE_SIZE
 
     ldir
 
@@ -204,6 +214,11 @@ Set_Border
     ld a, 0
     ld c, 254
     out (c), a  ;Set border colour Black
+
+
+Print_Working_Msg
+
+    INCLUDE "Working_Msg.z80"
 
 Preset_Variables
 
@@ -238,6 +253,12 @@ Preset_Variables
     INCLUDE "Maths.z80"
 
     INCLUDE "Interrupt_Stuff.z80"
+
+    org _SCALE_IMAGE_LOCATION
+    INCBIN "Scale_Packed.bin"
+
+    org _FONT_LOCATION
+    INCLUDE "Font.z80"
 
 
     SAVESNA "mandle.sna", Main_Loop.Start

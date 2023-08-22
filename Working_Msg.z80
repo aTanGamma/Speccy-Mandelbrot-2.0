@@ -1,0 +1,29 @@
+;Contains code to print the word 'Working' in the screen @ (0,0)
+
+    ld ix, Font.W
+    ld bc, $0000
+    call Xor_Character.Start
+
+    ld ix, Font.O
+    ld bc, $0100
+    call Xor_Character.Start
+
+    ld ix, Font.R
+    ld bc, $0200
+    call Xor_Character.Start
+
+    ld ix, Font.K
+    ld bc, $0300
+    call Xor_Character.Start
+
+    ld ix, Font.I
+    ld bc, $0400
+    call Xor_Character.Start
+
+    ld ix, Font.N
+    ld bc, $0500
+    call Xor_Character.Start
+
+    ld ix, Font.G
+    ld bc, $0600
+    call Xor_Character.Start

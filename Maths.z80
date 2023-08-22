@@ -208,7 +208,7 @@ Return_Answers
 
     ENDMODULE
 
-    MODULE Byte_Plotter
+    MODULE Xor_Byte_Plotter
 Start
 ;   Plots a given byte to the screen at a given line and byte no.
 
@@ -239,25 +239,62 @@ Start
 
     pop af   ;Return a
 
+    xor (hl)    ;xor byte in
     ld (hl), a  ;Store byte
 
     ret
 
     ENDMODULE
 
-/*
-    MODULE Long_Adder
 
-/*---------= Variables =---------*/
-
-
-
-
-/*---------= Code =---------*/
-
+    MODULE Xor_Character
 Start
+;   Set ix to location of the start of a character
+;   Set bc to Screen position as for byte plotter
 
+    ld de, bc
+    
+    ld a, (ix+0)
+    call Xor_Byte_Plotter.Start
+    inc e
+    ld bc, de
+
+    ld a, (ix+1)
+    call Xor_Byte_Plotter.Start
+    inc e
+    ld bc, de
+
+    ld a, (ix+2)
+    call Xor_Byte_Plotter.Start
+    inc e
+    ld bc, de
+
+    ld a, (ix+3)
+    call Xor_Byte_Plotter.Start
+    inc e
+    ld bc, de
+
+    ld a, (ix+4)
+    call Xor_Byte_Plotter.Start
+    inc e
+    ld bc, de
+
+    ld a, (ix+5)
+    call Xor_Byte_Plotter.Start
+    inc e
+    ld bc, de
+
+    ld a, (ix+6)
+    call Xor_Byte_Plotter.Start
+    inc e
+    ld bc, de
+
+    ld a, (ix+7)
+    call Xor_Byte_Plotter.Start
+    inc e
+    ld bc, de
+
+
+    ret
 
     ENDMODULE
-
-*/

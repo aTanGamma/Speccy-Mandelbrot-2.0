@@ -1,0 +1,157 @@
+Print_Took
+
+    ld ix, Font.T
+    ld bc, $0008
+    call Xor_Character.Start
+    
+    ld ix, Font.O
+    ld bc, $0108
+    call Xor_Character.Start
+    
+    ld ix, Font.O
+    ld bc, $0208
+    call Xor_Character.Start
+    
+    ld ix, Font.K
+    ld bc, $0308
+    call Xor_Character.Start
+    
+Get_Frames
+
+    ld a, (Timer)
+    and %11110000   ;Now A has an offset into the font
+    ld bc, _FONT_LOCATION
+    rra
+    
+    or a
+    add a, c
+    ld c, a
+    
+    ld a, b
+    adc 0
+    ld b, a
+
+    push bc
+    pop ix  ;Transfer bc to ix via the stack
+    ld bc, $0508
+    call Xor_Character.Start
+
+    ld a, (Timer)
+    and %00001111   ;Now A has an offset into the font
+    ld bc, _FONT_LOCATION
+    .3 rla
+    
+    or a
+    add a, c
+    ld c, a
+    
+    ld a, b
+    adc 0
+    ld b, a
+
+    push bc
+    pop ix  ;Transfer bc to ix via the stack
+    ld bc, $0608
+    call Xor_Character.Start
+
+
+
+    ld a, (Timer+1)
+    and %11110000   ;Now A has an offset into the font
+    ld bc, _FONT_LOCATION
+    rra
+    
+    or a
+    add a, c
+    ld c, a
+    
+    ld a, b
+    adc 0
+    ld b, a
+
+    push bc
+    pop ix  ;Transfer bc to ix via the stack
+    ld bc, $0708
+    call Xor_Character.Start
+
+    ld a, (Timer+1)
+    and %00001111   ;Now A has an offset into the font
+    ld bc, _FONT_LOCATION
+    .3 rla
+    
+    or a
+    add a, c
+    ld c, a
+    
+    ld a, b
+    adc 0
+    ld b, a
+
+    push bc
+    pop ix  ;Transfer bc to ix via the stack
+    ld bc, $0808
+    call Xor_Character.Start
+
+
+
+    ld a, (Timer+2)
+    and %11110000   ;Now A has an offset into the font
+    ld bc, _FONT_LOCATION
+    rra
+    
+    or a
+    add a, c
+    ld c, a
+    
+    ld a, b
+    adc 0
+    ld b, a
+
+    push bc
+    pop ix  ;Transfer bc to ix via the stack
+    ld bc, $0908
+    call Xor_Character.Start
+
+    ld a, (Timer+2)
+    and %00001111   ;Now A has an offset into the font
+    ld bc, _FONT_LOCATION
+    .3 rla
+    
+    or a
+    add a, c
+    ld c, a
+    
+    ld a, b
+    adc 0
+    ld b, a
+
+    push bc
+    pop ix  ;Transfer bc to ix via the stack
+    ld bc, $0A08
+    call Xor_Character.Start
+
+Print_Frames
+
+    ld ix, Font.F
+    ld bc, $0C08
+    call Xor_Character.Start
+    
+    ld ix, Font.R
+    ld bc, $0D08
+    call Xor_Character.Start
+    
+    ld ix, Font.A
+    ld bc, $0E08
+    call Xor_Character.Start
+    
+    ld ix, Font.M
+    ld bc, $0F08
+    call Xor_Character.Start
+
+    ld ix, Font.E
+    ld bc, $1008
+    call Xor_Character.Start
+
+    ld ix, Font.S
+    ld bc, $1108
+    call Xor_Character.Start
