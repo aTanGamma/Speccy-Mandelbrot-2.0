@@ -39,10 +39,10 @@ _COL_ATR_LENGTH = $0300
 
 _WHITE_BLACK = %01111000    ;no flash, bright, black paper, white ink
 
-_SCALE_IMAGE_LOCATION = $6400
+_SCALE_IMAGE_LOCATION = $6800
 _SCALE_IMAGE_SIZE = 6144
 
-_FONT_LOCATION = $7C00  ;Also the first Character
+_FONT_LOCATION = $8000  ;Also the first Character
 
 /*----= Main Code =----*/
 
@@ -96,7 +96,7 @@ Determine_Pixel_State
 
     ccf
     
-    jp nz, Rotate_In_Pixel   ;Skip if iterations < 51
+    jr nz, Rotate_In_Pixel   ;Skip if iterations < MAX
 
     scf     ;If max. iterations reached, set C
 Rotate_In_Pixel
@@ -163,6 +163,8 @@ Inc_Line_No
 
     jr z, Done
 
+Reset_X_Pos
+
     ld bc, _INITIAL_X
     ld (Current_X), bc  ;Reset X_Pos to -2
 
@@ -188,6 +190,9 @@ End
 
     im 1
     ei
+
+    halt
+    
     ret
 
     ENDMODULE

@@ -76,18 +76,14 @@ Setup_Memory
 
     ld (Num_A+2), bc    ;Put bc in Num_a
 
-    ld b, 16    ;Set loop counter
-
-R_Shift_de
-
-    push bc ;Counter -> Stack
+R_Shift_de_0
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA
+    jr nc, L_Shift_NumA_0
 
-Add_NumA
+Add_NumA_0
     
     or a    ;Clear flags
 
@@ -106,30 +102,685 @@ Add_NumA
     ld (Result), hl
 
 
-L_Shift_NumA
+L_Shift_NumA_0
 
 
-;   Shifts A left using bc instead of a and hl - slightly faster and neater
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
 
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_1
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_1
+
+Add_NumA_1
+    
+    or a    ;Clear flags
 
     ld bc, (Num_A+2)
-    sla c
-    rl b
+    ld hl, (Result+2)
 
-    ld (Num_A+2), bc
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
 
     ld bc, (Num_A)
-    rl c
-    rl b
+    ld hl, (Result)
 
-    ld (Num_A), bc
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
 
 
-Check_Loop_Counter
+L_Shift_NumA_1
 
-    pop bc  ;Restore bc from stack
 
-    djnz R_Shift_de ;Dec loop counter and loop if b != 0
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_2
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_2
+
+Add_NumA_2
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_2
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_3
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_3
+
+Add_NumA_3
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_3
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_4
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_4
+
+Add_NumA_4
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_4
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_5
+
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_5
+
+Add_NumA_5
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_5
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_6
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_6
+
+Add_NumA_6
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_6
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_7
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_7
+
+Add_NumA_7
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_7
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_8
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_8
+
+Add_NumA_8
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_8
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_9
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_9
+
+Add_NumA_9
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_9
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_A
+
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_A
+
+Add_NumA_A
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_A
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_B
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_B
+
+Add_NumA_B
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_B
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_C
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_C
+
+Add_NumA_C
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_C
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_D
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_D
+
+Add_NumA_D
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_D
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_E
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_E
+
+Add_NumA_E
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_E
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
+R_Shift_de_F
+
+    srl d
+    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
+
+    jr nc, L_Shift_NumA_F
+
+Add_NumA_F
+    
+    or a    ;Clear flags
+
+    ld bc, (Num_A+2)
+    ld hl, (Result+2)
+
+    add hl, bc  ;Add low-bytes of R and A together
+
+    ld (Result+2), hl
+
+    ld bc, (Num_A)
+    ld hl, (Result)
+
+    adc hl, bc  ;Add Hi-Bytes of R and A
+
+    ld (Result), hl
+
+
+L_Shift_NumA_F
+
+
+;   Shifts A left using hl instead of a and hl - slightly faster and neater
+
+
+    ld hl, (Num_A+2)
+    sla l
+    rl h
+
+    ld (Num_A+2), hl
+
+    ld hl, (Num_A)
+    rl l
+    rl h
+
+    ld (Num_A), hl
+
 
 Shift_Result
 
