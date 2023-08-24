@@ -39,10 +39,10 @@ _COL_ATR_LENGTH = $0300
 
 _WHITE_BLACK = %01111000    ;no flash, bright, black paper, white ink
 
-_SCALE_IMAGE_LOCATION = $7000
+_SCALE_IMAGE_LOCATION = $6400
 _SCALE_IMAGE_SIZE = 6144
 
-_FONT_LOCATION = $8C00  ;Also the first Character
+_FONT_LOCATION = $7C00  ;Also the first Character
 
 /*----= Main Code =----*/
 
