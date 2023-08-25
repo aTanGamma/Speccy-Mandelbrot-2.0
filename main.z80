@@ -22,7 +22,7 @@ Timer = $5F08
 /*----= Definitions =----*/
 
 _INITIAL_X = $E000  ;-2
-_INITIAL_Y = $1000  ;+1.25
+_INITIAL_Y = $1000  ;+1
 
 _X_STEP_SIZE = $0028    ;+ 2.5/256 = 0000.0000 0011 0000 
 _Y_STEP_SIZE = $FFD5    ;- 2.25/192 = 1111.1111 1101 0101
@@ -74,12 +74,6 @@ Start
     ld i, a     ;CPU then goes to location $FFFF to execute a relative jump, which happens to make jr $F3, so a jp can be put 13 bytes behind $FFFF
 
     ei
-
-    halt
-    
-    ld a, 0
-    ld c, 254
-    out (c), a  ;Set border colour Black
 
 Main
 
@@ -192,7 +186,7 @@ End
     ei
 
     halt
-    
+
     ret
 
     ENDMODULE
@@ -220,9 +214,8 @@ Set_Attributes
 
 Set_Border
 
-    ld a, 0
-    ld c, 254
-    out (c), a  ;Set border colour Black
+    ld a, _BORDER_COLOUR
+    out (254), a  ;Set border colour Black
 
 
 Print_Working_Msg

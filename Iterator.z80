@@ -47,8 +47,11 @@ Temp_Space = $5D00  ;16 bytes free for general purpose
 
 Init
 
+    ld a, 2
+    out (254), a  ;Set border colour Red    (Shows program working)
+
     ld a, 0
-    ld (Iteration), a   ;Initialise iteration counter to MAX
+    ld (Iteration), a   ;Initialise iteration counter to 0
 
     ld bc, (Current_X)
     ld (Working_X), bc
@@ -56,12 +59,83 @@ Init
     ld bc, (Current_Y)
     ld (Working_Y), bc  ;Make a copy of X&Y
 
+Initial_Check_1  ;Checks if in block (-0.5, 0.5),(-0.5, -0.5) or (),()
+
+;   bc currently has Y value
+
+    ld a, b
+    sub $07
+
+    jp p, Initial_Check_2   ;If b > 0.5, skip
+
+    ld bc, (Current_X)
+    bit 7, b    ;Check if X pos > 0, if yes, skip
+
+    jp z, Initial_Check_2
+
+    ld a, b
+    cpl
+    ld b, a
+
+    ld a, c
+    cpl
+    ld c, a
+
+    inc bc  ;Make Xpos positive
+
+    ld a, $08
+    cp b    ;If X > 0.5, carry on
+
+    jp m, Initial_Check_2
+
+    ld a, _MAX_ITERATIONS
+    ret
+
+Initial_Check_2
+
+    ld bc, $0999    ;~0.6
+    ld hl, (Current_Y)
+
+    or a
+    sbc hl, bc
+
+    bit 7, h
+    jp z, Calc_X2
+
+    ld hl, (Current_X)
+    ld bc, $04CC    ;~0.3
+
+    bit 7, h
+    jp z, Calc_X2   ;If X > 0, skip
+
+    ld a, h
+    cpl
+    ld h, a
+
+    ld a, l
+    cpl
+    ld l, a
+    inc hl  ;Make X +ve
+
+    or a
+    sbc hl, bc
+
+    bit 7, h
+    jp z, Calc_X2
+
+    ld a, _MAX_ITERATIONS
+    ret
+
 Calc_X2
 
     ld bc, (Working_X)
     ld d, b
     ld e, c ;Slightly quicker than loading from memory (-2 cycles)
     call Long_Multiply.Start    ;Calculates X^2, returns result in BC (and A)
+
+    ld a, b
+    cp $40  ;Check if X2 > 4 (a - b)
+    jp p, Exit  ;If X2 > 4, ans >= 0
 
     ld (X2), bc ;Store X^2 in X2
 
@@ -105,6 +179,11 @@ Calc_Next_X
 
     ld (Next_X), hl
 
+    ld a, h
+    cp $20  ;Check if Next_X > 2
+    jp p, Exit  ;If Next_X^2 > 4, next X2 + Y2 >= 4
+;   Above check skips multiplication below
+
 Calc_Next_Y
 
     ld bc, (Working_X)
@@ -118,6 +197,10 @@ Calc_Next_Y
 
     ld hl, (Current_Y)
     add hl, bc  ;hl = Next_Y
+
+    ld a, h
+    cp $20  ;Check if Next_Y > 2
+    jp p, Exit  ;If Next_Y^2 > 4, next X2 + Y2 >= 4
 
 Move_Next_Working_Coords
 
@@ -138,6 +221,9 @@ Count_Iterations
 Exit
 
 ;   Iterations = 51 - b
+
+    ld a, 0
+    out (254), a  ;Set border colour Black  (Shows program working)
     
     ld a, (Iteration)
 

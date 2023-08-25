@@ -7,9 +7,48 @@ Files required for proper building:
 
 Box drawing characters:
 
-░ ▒ ▓ █ │ ┤ ┘ ┌ ┐ └ ┴ ┬ ├ ─ ┼ ╣ ║ ╗ ╝ ╚ ╔ ╩ ╦ ╠ ═ ╬ ▄ ¦ ■
+↑ ↓ → ← 
+
+░ ▒ ▓ █ 
+
+▀ ▄ ▌▐ ▬ 
+
+║ │ ═ ─
+
+╣ ╢ ╡ ┤ 
+
+╠ ╟ ╞ ├ 
+
+╗ ╖ ╕ ┐ 
+
+╝ ╜ ╛ ┘ 
+
+╔ ╓ ╒ ┌
+
+╚ ╙ ╘ └
+
+╦ ╥ ╤ ┬
+
+╩ ╨ ╧ ┴
+
+╬ ╫ ╪ ┼
 
 Docs:
+
+Credits:
+
+    All Code and 'GFX' by
+
+               |¯¯¯¯¯¯¯¯¯¯¯¯|
+               |/¯¯¯|  |¯¯¯\|
+                    |  |        /\       ¯\¯\ ¯||¯
+        ____ /¯/    |  |       /\ \       |\ \ ||
+       /    \ |     |  |      /  \ \      ||\ \||
+       |\___| |     |  |     /¯¯¯¯\ \     || \ \|
+        \____/\_   _|__|_  _/_    _\_\_  _||_ \_\  (or aTanGamma depending on the platorm)
+
+    Images converted to Speccy format via 'Spectra Image Converter'
+
 
 O----= Memory Map =-----------------------------O
 |                                               |
@@ -112,5 +151,79 @@ O----= Spectrum Screen Addresses =--------------------------O
 |       │  │  └───────────> Y2, Y1, Y0                      |
 |       │  └──────────────> Y6, Y7                          |
 |       └─────────────────> Fixed @ 010                     |
+|                                                           |
+O----= Byte Plotter =---------------------------------------O
+|                                                           |
+|   This routine takes an xy byte-coord in bc and plots     |
+|       the contents of a.                                  |
+|                                                           |
+|       - Push af                                           |
+|                                                           |
+|       - Get Y5, 4, 3, shift to position                   |
+|       - Add X potition                                    |
+|       - Send finished lo-byte to l                        |
+|                                                           |
+|       - Get Y 2, 1, 0                                     |
+|       - Get Y7, 6 and shift to position                   |
+|       - Add above two to get finished hi-byte             |
+|       - Send to h                                         |
+|                                                           |
+|       - Pop af                                            |
+|       - Put a at (hf)                                     |
+|                                                           |
+O----= Character Plotter =----------------------------------O
+|                                                           |
+|   Repeats the Byte Plotter with each line of a character  |
+|                                                           |
+O-----------------------------------------------------------O
+
+O----= Interrupt Timer =------------------------------------------------O
+|                                                                       |
+|   Times how long the plot took to calculate                           |
+|                                                                       |
+|       - Set interrupt mode 2, point i to $39xx                        |
+|       - On interrupt, Z80 jumpts through address at $39xx             |
+|           All bytes in this page are $FF (48K Speccy only)            |
+|       - Relative jump instruction at $FFFF, with first byte of ROM    |
+|           Sends PC back to $FFF4 where another jump is waiting        |
+|                                                                       |
+|       Interrupt Main:                                                 |
+|                                                                       |
+|       - Push af                                                       |
+|       - Increment 3-byte timer                                        |
+|       - Pop af                                                        |
+|       - Return from interrupt                                         |
+|                                                                       |
+O-----------------------------------------------------------------------O
+
+O----= Speedhax =-------------------------------------------O
+|                                                           |
+|   1.  Screen is mirrored to halve calculations            |
+|                                                           |
+|   2.  If coord is in one of two blocks ↓, it's            |
+|           guaranteed to iterate forever                   |
+|                                                           |
+|              (-0.3, 0.6) X─────┐                          |
+|                          │     │                          |
+|   (-0.5, 0.5) X──────────┼─────┤                          |
+|               │          │     │                          |
+|               │          │     │                          |
+|               │          │     │                          |
+|               │          │     │                          |
+|               │          │     │                          |
+|               └──────────┼─────X (0, -0.5)                |
+|                          │     │                          |
+|                          └─────X (0, -0.6)                |
+|                                                           |
+|   3.  If X^2 >= 4, exit without calculating Y^2:          |
+|           Radius guaranteed to be too large               |
+|                                                           |
+|   4.  In multiplication routine, the top 2 bits of        |
+|           any Num_B are always 0, so skip 2 shift/adds.   |
+|                                                           |
+|   5.  Multiplication loop unrolled (saved 30 minutes !!)  |
+|                                                           |
+|   6.  If Next X/Y >= 2, exit iterations early:            |
+|           Next X^2 / Y^2 will be >4. (see 3)              |
 |                                                           |
 O-----------------------------------------------------------O

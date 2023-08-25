@@ -16,6 +16,9 @@ No_Negs = $5D08
 Start
 
     ld a, 0
+    out (254), a  ;Set border colour Black  (Looks Cooler)
+
+    ld a, 0
     ld hl, Num_A
 
     ld (hl), a
@@ -36,7 +39,7 @@ Start
 Sign_Check_bc   ;Note: A = 0 still
 
     bit 7, b    ;Check if bc negative; If bit 7 set, Z = 0
-    jr z, Sign_Check_de
+    jp z, Sign_Check_de
 
     inc l       ;Count 1 negative number
 
@@ -54,7 +57,7 @@ Sign_Check_bc   ;Note: A = 0 still
 Sign_Check_de
 
     bit 7, d    ;Check if de negative
-    jr z, Setup_Memory
+    jp z, Setup_Memory
 
     inc l       ;Count 1 negative number
 
@@ -81,7 +84,7 @@ R_Shift_de_0
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_0
+    jp nc, L_Shift_NumA_0
 
 Add_NumA_0
     
@@ -120,12 +123,22 @@ L_Shift_NumA_0
 
     ld (Num_A), hl
 
+    ld a, 0
+    or a
+
+    cp d    ;a - d
+    jp nz, R_Shift_de_1  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
+
 R_Shift_de_1
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_1
+    jp nc, L_Shift_NumA_1
 
 Add_NumA_1
     
@@ -145,7 +158,6 @@ Add_NumA_1
 
     ld (Result), hl
 
-
 L_Shift_NumA_1
 
 
@@ -164,11 +176,17 @@ L_Shift_NumA_1
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_2  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_2
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_2
+    jp nc, L_Shift_NumA_2
 
 Add_NumA_2
     
@@ -207,12 +225,18 @@ L_Shift_NumA_2
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_3  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_3
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_3
+    jp nc, L_Shift_NumA_3
 
 Add_NumA_3
     
@@ -251,12 +275,18 @@ L_Shift_NumA_3
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_4  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_4
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_4
+    jp nc, L_Shift_NumA_4
 
 Add_NumA_4
     
@@ -295,13 +325,19 @@ L_Shift_NumA_4
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_5  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_5
 
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_5
+    jp nc, L_Shift_NumA_5
 
 Add_NumA_5
     
@@ -340,12 +376,18 @@ L_Shift_NumA_5
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_6  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_6
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_6
+    jp nc, L_Shift_NumA_6
 
 Add_NumA_6
     
@@ -384,12 +426,18 @@ L_Shift_NumA_6
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_7  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_7
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_7
+    jp nc, L_Shift_NumA_7
 
 Add_NumA_7
     
@@ -428,12 +476,18 @@ L_Shift_NumA_7
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_8  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_8
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_8
+    jp nc, L_Shift_NumA_8
 
 Add_NumA_8
     
@@ -472,12 +526,18 @@ L_Shift_NumA_8
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_9  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_9
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_9
+    jp nc, L_Shift_NumA_9
 
 Add_NumA_9
     
@@ -516,13 +576,19 @@ L_Shift_NumA_9
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_A  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_A
 
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_A
+    jp nc, L_Shift_NumA_A
 
 Add_NumA_A
     
@@ -561,12 +627,18 @@ L_Shift_NumA_A
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_B  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_B
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_B
+    jp nc, L_Shift_NumA_B
 
 Add_NumA_B
     
@@ -605,12 +677,18 @@ L_Shift_NumA_B
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_C  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_C
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_C
+    jp nc, L_Shift_NumA_C
 
 Add_NumA_C
     
@@ -649,12 +727,18 @@ L_Shift_NumA_C
 
     ld (Num_A), hl
 
+    cp d    ;a - d
+    jp nz, R_Shift_de_D  ;If != 0 (d != 0), skip
+
+    cp e
+    jp z, Shift_Result  ;If d == 0 && e == 0, exit early (saves time with small numbers)
+
 R_Shift_de_D
 
     srl d
     rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
 
-    jr nc, L_Shift_NumA_D
+    jp nc, L_Shift_NumA_D
 
 Add_NumA_D
     
@@ -693,93 +777,6 @@ L_Shift_NumA_D
 
     ld (Num_A), hl
 
-R_Shift_de_E
-
-    srl d
-    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
-
-    jr nc, L_Shift_NumA_E
-
-Add_NumA_E
-    
-    or a    ;Clear flags
-
-    ld bc, (Num_A+2)
-    ld hl, (Result+2)
-
-    add hl, bc  ;Add low-bytes of R and A together
-
-    ld (Result+2), hl
-
-    ld bc, (Num_A)
-    ld hl, (Result)
-
-    adc hl, bc  ;Add Hi-Bytes of R and A
-
-    ld (Result), hl
-
-
-L_Shift_NumA_E
-
-
-;   Shifts A left using hl instead of a and hl - slightly faster and neater
-
-
-    ld hl, (Num_A+2)
-    sla l
-    rl h
-
-    ld (Num_A+2), hl
-
-    ld hl, (Num_A)
-    rl l
-    rl h
-
-    ld (Num_A), hl
-
-R_Shift_de_F
-
-    srl d
-    rr e    ;d >> Carry (= d0) >> e >> Carry (= e0)
-
-    jr nc, L_Shift_NumA_F
-
-Add_NumA_F
-    
-    or a    ;Clear flags
-
-    ld bc, (Num_A+2)
-    ld hl, (Result+2)
-
-    add hl, bc  ;Add low-bytes of R and A together
-
-    ld (Result+2), hl
-
-    ld bc, (Num_A)
-    ld hl, (Result)
-
-    adc hl, bc  ;Add Hi-Bytes of R and A
-
-    ld (Result), hl
-
-
-L_Shift_NumA_F
-
-
-;   Shifts A left using hl instead of a and hl - slightly faster and neater
-
-
-    ld hl, (Num_A+2)
-    sla l
-    rl h
-
-    ld (Num_A+2), hl
-
-    ld hl, (Num_A)
-    rl l
-    rl h
-
-    ld (Num_A), hl
 
 
 Shift_Result
@@ -826,7 +823,7 @@ Adjust_Result_Sign
     or a
     rra   ;If there were an odd number of negative numbers, negate answer
 
-    jr nc, Return_Answers    ;Jump if not negating
+    jp nc, Return_Answers    ;Jump if not negating
 
 
     ld a, $FF
@@ -852,7 +849,8 @@ Return_Answers
 ;   a holds true highest-byte of answer, +ve or -ve
 ;   bc holds small units and fractional part
 
-
+    ld a, 1
+    out (254), a  ;Set border colour Blue  (Shows program working)
 
     ret ;Exit once finished
 
