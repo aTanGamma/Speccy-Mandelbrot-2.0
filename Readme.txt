@@ -4,6 +4,13 @@ Files required for proper building:
 
     - Main.z80 - Main code loop
     - Maths.z80 - Maths functions
+    - Timer_Msg.z80 - Prints words on screen
+    - Working_Msg.z80 - Prints a word on screen
+    - Iterator.z80 - Logic for iterations
+    - Interrupt_Stuff.z80 - Interrupt setup and timer
+    - Title_Binary.bin - Title screen
+    - Font.z80 - Font data
+    - Scale_Packed.bin - Image of graph scale
 
 Box drawing characters:
 
