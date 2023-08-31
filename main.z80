@@ -39,10 +39,10 @@ _COL_ATR_LENGTH = $0300
 
 _WHITE_BLACK = %01111000    ;no flash, bright, black paper, white ink
 
-_SCALE_IMAGE_LOCATION = $6800
+_SCALE_IMAGE_LOCATION = $6000
 _SCALE_IMAGE_SIZE = 6144
 
-_FONT_LOCATION = $8000  ;Also the first Character
+_FONT_LOCATION = $7800  ;Also the first Character
 
 /*----= Main Code =----*/
 
@@ -50,7 +50,7 @@ _FONT_LOCATION = $8000  ;Also the first Character
 
     INCBIN "Title_Binary.bin"
 
-    org $6000
+    org $8000
 
     MODULE Main_Loop
 
