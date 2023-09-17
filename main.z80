@@ -7,17 +7,17 @@
 
 /*----= Global Variables =----*/
 
-Current_X = $5F00   ;Location of current X coord (16-bit, fixed point)
-Current_Y = $5F02   ;Location of current Y coord (16-bit, fixed point)
+Current_X = $8000   ;Location of current X coord (16-bit, fixed point)
+Current_Y = $8002   ;Location of current Y coord (16-bit, fixed point)
 
-X_Byte = $5F06  ;Screen byte number (0 - 31) ──┐
-X_Pixel = $5F04 ;The X-pos in px on the screen ├───> For working out Screen Address
-Line_No = $5F05 ;Scanline number ──────────────┘
+X_Byte = $8006  ;Screen byte number (0 - 31) ──┐
+X_Pixel = $8004 ;The X-pos in px on the screen ├───> For working out Screen Address
+Line_No = $8005 ;Scanline number ──────────────┘
 ;^ In reverse order for loading into bc
 
-Byte_To_Fill = $5F07
+Byte_To_Fill = $8007
 
-Timer = $5F08
+Timer = $8008
 
 /*----= Definitions =----*/
 
@@ -50,7 +50,7 @@ _FONT_LOCATION = $7800  ;Also the first Character
 
     INCBIN "Title_Binary.bin"
 
-    org $8000
+    org $8100
 
     MODULE Main_Loop
 

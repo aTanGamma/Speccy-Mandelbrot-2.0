@@ -3,18 +3,18 @@
 
     MODULE Iterator
 
-Working_X = $5CD0   ;Initially copies of Current_X / Current_Y
-Working_Y = $5CD2   ; Are used each iteration as Z_(-1)
+Working_X = $80D0   ;Initially copies of Current_X / Current_Y
+Working_Y = $80D2   ; Are used each iteration as Z_(-1)
 
-Next_X = $5CD4  ;These are used to work out the new x/y positions
-Next_Y = $5CD6  ;Once calculated, these are moved into copy places for next iteration
+Next_X = $80D4  ;These are used to work out the new x/y positions
+Next_Y = $80D6  ;Once calculated, these are moved into copy places for next iteration
 
-X2 = $5CD8  ;X^2
-Y2 = $5CDB  ;Y^2    2 bytes as upper nybble can be ignored here - result <= $6400 from X^2
+X2 = $80D8  ;X^2
+Y2 = $80DB  ;Y^2    2 bytes as upper nybble can be ignored here - result <= $6400 from X^2
 
-Iteration = $5CDE   ;Iteration counter
+Iteration = $80DE   ;Iteration counter
 
-Temp_Space = $5D00  ;16 bytes free for general purpose
+Temp_Space = $80F0  ;16 bytes free for general purpose
 
 
 /*

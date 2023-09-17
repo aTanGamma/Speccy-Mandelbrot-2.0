@@ -5,11 +5,11 @@
 
 /*---------= Variables =---------*/
 
-Num_A = $5D00   ;4-bytes to allow for shifting left
+Num_A = $8040   ;4-bytes to allow for shifting left
 
-Result = $5D04  ;4-byte result
+Result = $8044  ;4-byte result
 
-No_Negs = $5D08
+No_Negs = $8048
 
 /*---------= Code =---------*/
 
