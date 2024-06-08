@@ -131,7 +131,7 @@ Calc_X2
     ld bc, (Working_X)
     ld d, b
     ld e, c ;Slightly quicker than loading from memory (-2 cycles)
-    call Long_Multiply.Start    ;Calculates X^2, returns result in BC (and A)
+    call Table_Mult.Start    ;Calculates X^2, returns result in BC (and A)
 
     ld a, b
     cp $40  ;Check if X2 > 4 (a - b)
@@ -144,7 +144,7 @@ Calc_Y2
     ld bc, (Working_Y)
     ld d,b
     ld e,c
-    call Long_Multiply.Start    ;Calculates Y^2, returns result in BC (and A)
+    call Table_Mult.Start    ;Calculates Y^2, returns result in BC (and A)
 
     ld (Y2), bc ;Store Y^2 in Y2
 
@@ -188,7 +188,7 @@ Calc_Next_Y
 
     ld bc, (Working_X)
     ld de, (Working_Y)
-    call Long_Multiply.Start
+    call Table_Mult.Start
 
 ;   bc holds answers
 
