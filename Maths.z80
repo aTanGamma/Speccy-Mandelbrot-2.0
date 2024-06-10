@@ -387,7 +387,22 @@ AaCc_Mult
     ld c, 0 ;Get pointer into SumTable
     ld a, b
     or a
-    add d   ;$Aa + $Cc
+    jr nz, 1F
+
+    ld hl, 0
+    ld (Mid_0), hl
+    jr AaDd_Mult
+
+1
+    ld a, d
+    or a
+    jr nz, 1F
+
+    ld hl, 0
+    ld (Mid_0), hl
+    jr AaDd_Mult
+1
+    add b   ;$Aa + $Cc
 
     jr nc, 1F
     inc c
@@ -439,9 +454,24 @@ AaDd_Mult
 
     ld c, 0   ;Get pointer into SumTable
     ld a, (Num_A+1)
+
+    or a
+    jr nz, 1F
+
+    ld hl, 0
+    ld (Mid_1), hl
+    jr BbCc_Mult
+1
     ld l, a
     ld a, (Num_B)
 
+    or a
+    jr nz, 1F
+
+    ld hl, 0
+    ld (Mid_1), hl
+    jr BbCc_Mult
+1
     or a
     add l   ;$Aa + $Dd
     jr nc, 1F
@@ -495,9 +525,26 @@ BbCc_Mult
 
     ld c, 0   ;Get pointer into SumTable
     ld a, (Num_A)
+
+    or a
+    jr nz, 1F
+
+    ld hl, 0
+    ld (Mid_2), hl
+    jr BbDd_Mult
+
+1
     ld l, a
     ld a, (Num_B+1)
 
+    or a
+    jr nz, 1F
+
+    ld hl, 0
+    ld (Mid_2), hl
+    jr BbDd_Mult
+
+1
     or a
     add l   ;$Bb + $Cc
     jr nc, 1F
@@ -551,9 +598,24 @@ BbDd_Mult
 
     ld c, 0 ;Get pointer into SumTable
     ld a, (Num_A)
+
+    or a
+    jr nz, 1F
+
+    ld hl, 0
+    jr Sum_Temp_Answers
+
+1
     ld l, a
     ld a, (Num_B)
 
+    or a
+    jr nz, 1F
+
+    ld hl, 0
+    jr Sum_Temp_Answers
+
+1
     or a
     add l   ;$Bb + $Dd
     jr nc, 1F
