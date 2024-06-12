@@ -42,7 +42,7 @@ _Y_STEP_SIZE = $FFFC    ;- 0.25/96 = 1111.1111 1111 1100
 
 _BORDER_COLOUR = 0 ;Black border
 
-_MAX_ITERATIONS = 255
+_MAX_ITERATIONS = 256
 _MIDS_THRESHOLD = 64
 _DARK_THRESHOLD = 32
 
@@ -176,10 +176,10 @@ Rotate_In_2_Blank
 
 Inc_X_Px
 
-    ld a, %00010000
-    out ($FE), a
-    .16 nop
-    ld a, 0
+    ;ld a, %00010100
+    ;out ($FE), a
+    ;.16 nop
+    ld a, 4
     out ($FE), a
 
     ld a, (X_Pixel)

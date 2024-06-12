@@ -4,13 +4,11 @@ Files required for proper building:
 
     - Main.z80 - Main code loop
     - Maths.z80 - Maths functions
-    - Timer_Msg.z80 - Prints words on screen
-    - Working_Msg.z80 - Prints a word on screen
+        - MultTable.bin
     - Iterator.z80 - Logic for iterations
     - Interrupt_Stuff.z80 - Interrupt setup and timer
-    - Title_Binary.bin - Title screen
+    - LoaderImage_V2.bin - Title screen
     - Font.z80 - Font data
-    - Scale_Packed.bin - Image of graph scale
 
 Box drawing characters:
 
@@ -100,7 +98,8 @@ O----= 16-bit Fixed Point =---------------------------------O
 |       Multiplication:                                     |
 |                                                           |
 |           - Multiply as 16-bit integer                    |
-|           - Shift answer right 4 bits (Divide by 16)      |
+|           - Shift answer left 4 bits (Divide by 16)       |
+|           - Take top 2 bytes as answer                    |
 |                                                           |
 |       Division:                                           |
 |                                                           |
@@ -110,24 +109,27 @@ O----= 16-bit Fixed Point =---------------------------------O
 |                                                           |
 O-----------------------------------------------------------O
 
-O----= Multiplication Algorithm =---------------------------O
+O----= NEW Multiplication Algorithm =-----------------------O
 |                                                           |
-|   Relatively standard shift/add routine                   |
+|   Uses the 'Quarter Squares' algorithm.                   |
 |                                                           |
-|       - Check the signs of 1 Num_A and Num_B              |
-|       - Make both positive and count number of negatives  |
+|       1   ┌     2        2 ┐                              |
+|       - * |(A+B)  - (A-B)  |                              |
+|       4   └                ┘  Where A & B are 8-bit ints  |
 |                                                           |
-|   +---> B >> 1 to C (Carry = B0)                          |
-|   |     +-> If C = 1, add Num_A to Result                 |
-|   |   - A << 1                                            |
-|   +---- Decrement counter (from 16)                       |
+|   Two 16-bit numbers are multiplied as follows:           |
 |                                                           |
-|       - Result >> 4                                       |
-|       - No_Negatives >> 1                                 |
-|       +-> If C = 1, negate answer:                        |
-|           - xor $FFFFFFFF                                 |
-|           - add 1                                         |
-|       - Return answer in abc                              |
+|   AaBb * CcDd ≡ [(Aa)·2^8 + Bb] * [(Cc)·2^8 + Dd]         |
+|                                                           |
+|   ≡ (Aa·Cc)·2^16 + (Aa·Dd)·2^8 + (Bb·Cc)·2^8 + (Bb·Dd)    |
+|                                                           |
+|   - The partial products [Aa·Cc, Aa·Dd, Bb·Cc, Bb·Dd]     |
+|      are found using the first equation and two lookup    |
+|      tables; one with (A+B)/4 and the other (A-B / 4)     |
+|                                                           |
+|   - The partial products are shifted properly and added   |
+|      up to make the final answer                          |
+|                                                           |
 O-----------------------------------------------------------O
 
 O----= Division Algorithm =-----------------------------------------------------------------O
@@ -233,4 +235,24 @@ O----= Speedhax =-------------------------------------------O
 |   6.  If Next X/Y >= 2, exit iterations early:            |
 |           Next X^2 / Y^2 will be >4. (see 3)              |
 |                                                           |
+O-----------------------------------------------------------O
+
+O----= OLD Multiplication Algorithm =-----------------------O
+|                                                           |
+|   Relatively standard shift/add routine                   |
+|                                                           |
+|       - Check the signs of 1 Num_A and Num_B              |
+|       - Make both positive and count number of negatives  |
+|                                                           |
+|   +---> B >> 1 to C (Carry = B0)                          |
+|   |     +-> If C = 1, add Num_A to Result                 |
+|   |   - A << 1                                            |
+|   +---- Decrement counter (from 16)                       |
+|                                                           |
+|       - Result >> 4                                       |
+|       - No_Negatives >> 1                                 |
+|       +-> If C = 1, negate answer:                        |
+|           - xor $FFFFFFFF                                 |
+|           - add 1                                         |
+|       - Return answer in abc                              |
 O-----------------------------------------------------------O

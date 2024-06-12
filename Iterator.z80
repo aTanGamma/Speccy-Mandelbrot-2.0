@@ -64,7 +64,13 @@ Calc_X2
     ld bc, (Working_X)
     ld d, b
     ld e, c ;Slightly quicker than loading from memory (-2 cycles)
-    call Table_Mult.Start    ;Calculates X^2, returns result in BC (and A)
+
+    ld a, 5
+    out ($FE), a
+    xor a
+    out ($FE), a    ;Blip of cyan
+
+    call Fast_Square.Start    ;Calculates X^2, returns result in BC (and A)
 
     ld a, b
     cp $40  ;Check if X2 > 4 (a - b)
@@ -77,7 +83,13 @@ Calc_Y2
     ld bc, (Working_Y)
     ld d,b
     ld e,c
-    call Table_Mult.Start    ;Calculates Y^2, returns result in BC (and A)
+
+    ld a, 2
+    out ($FE), a
+    xor a
+    out ($FE), a    ;Blip of red
+
+    call Fast_Square.Start    ;Calculates Y^2, returns result in BC (and A)
 
     ld (Y2), bc ;Store Y^2 in Y2
 
@@ -121,6 +133,12 @@ Calc_Next_Y
 
     ld bc, (Working_X)
     ld de, (Working_Y)
+
+    ld a, 7
+    out ($FE), a
+    xor a
+    out ($FE), a    ;Blip of yellow
+
     call Table_Mult.Start
 
 ;   bc holds answers
