@@ -130,7 +130,23 @@ O----= NEW Multiplication Algorithm =-----------------------O
 |   - The partial products are shifted properly and added   |
 |      up to make the final answer                          |
 |                                                           |
+O----= Fast Squaring =--------------------------------------O
+|                                                           |
+|   In the case of $AaBb * $AaBb, there is a faster method: |
+|                                                           |
+|          2                                                |
+|   ($AaBb)                                                 |
+|     ┌     2   16 ┐   ┌                 8 ┐   ┌     2 ┐    |
+|   ≡ |($Aa) * 2   | + |2 * $Aa * $Bb * 2  | + |($Bb)  |    |
+|     └            ┘   └                   ┘   └       ┘    |
+|                                     2      2              |
+|   Which is broken into getting ($Aa), ($Bb) and $Aa * $Bb |
+|    separately via table lookups and quarter squares       |
+|    respectively                                           |
+|                                                           |
 O-----------------------------------------------------------O
+
+
 
 O----= Division Algorithm =-----------------------------------------------------------------O
 |                                                                                           |
@@ -204,38 +220,6 @@ O----= Interrupt Timer =------------------------------------------------O
 |       - Return from interrupt                                         |
 |                                                                       |
 O-----------------------------------------------------------------------O
-
-O----= Speedhax =-------------------------------------------O
-|                                                           |
-|   1.  Screen is mirrored to halve calculations            |
-|                                                           |
-|   2.  If coord is in one of two blocks ↓, it's            |
-|           guaranteed to iterate forever                   |
-|                                                           |
-|              (-0.3, 0.6) X─────┐                          |
-|                          │     │                          |
-|   (-0.5, 0.5) X──────────┼─────┤                          |
-|               │          │     │                          |
-|               │          │     │                          |
-|               │          │     │                          |
-|               │          │     │                          |
-|               │          │     │                          |
-|               └──────────┼─────X (0, -0.5)                |
-|                          │     │                          |
-|                          └─────X (0, -0.6)                |
-|                                                           |
-|   3.  If X^2 >= 4, exit without calculating Y^2:          |
-|           Radius guaranteed to be too large               |
-|                                                           |
-|   4.  In multiplication routine, the top 2 bits of        |
-|           any Num_B are always 0, so skip 2 shift/adds.   |
-|                                                           |
-|   5.  Multiplication loop unrolled (saved 30 minutes !!)  |
-|                                                           |
-|   6.  If Next X/Y >= 2, exit iterations early:            |
-|           Next X^2 / Y^2 will be >4. (see 3)              |
-|                                                           |
-O-----------------------------------------------------------O
 
 O----= OLD Multiplication Algorithm =-----------------------O
 |                                                           |
