@@ -37,6 +37,8 @@ void Print_Font(char Tiles[256][8]);
 void Print_ImgToFile(char Img_Tiles[32][24][8]);
 void Match_Img2Font(char Img[32][24][8], char Font[256][8], unsigned char Tile[32][24]);
 void Pack_Img(unsigned char Tiles[32][24], char Cols[32][24]);
+void Pack_Font(char Tiles[256][8]);
+void Print_ImgTiles(char Tiles[32][24][8]);
 
 
 int main(void){
@@ -63,10 +65,13 @@ int main(void){
     Extract_FontTiles(Font, &Font_BmpHeader, &Font_DibHeader, Font_Tiles);
     Extract_ImgTiles(Image, &Img_BmpHeader, &Img_DibHeader, Img_Tiles, Img_Attributes);
     //Print_Font(Font_Tiles);
+    //Print_ImgTiles(Img_Tiles);
     //Print_ImgToFile(Img_Tiles);
     Match_Img2Font(Img_Tiles, Font_Tiles, TileMap);
 
     Pack_Img(TileMap, Img_Attributes);
+
+    Pack_Font(Font_Tiles);
 
     fclose(Image);
     fclose(Font);
@@ -165,29 +170,50 @@ void Extract_ImgTiles(FILE *Img, bmp_h *bmp_h, dib_h *dib_h, char Tiles[32][24][
                 ColourBuffer[i][6] = (DataBuffer[i][3] & 0xF0) >> 4;
                 ColourBuffer[i][7] = DataBuffer[i][3] & 0x0F;
 
+                for(int j = 0; j < 8; j++){
+                    if (ColourBuffer[i][j] == 8){
+                        ColourBuffer[i][j] = 0;
+                    }
+                }
             }
 
             for(int i=0; i<8; i++){
                 Tiles[x][y][i] = 0;
                 for(int j=0; j<8; j++){
 
-                    if((ColourBuffer[i][j] & 0x07) != 0){
+                    if(ColourBuffer[i][j] != 0){
                         Tiles[x][y][i] = Tiles[x][y][i] | (0x80 >> j);
                     }
-                
+            
                 }
             }
 
             
-            bg = ColourBuffer[0][0];
-            for(int i=0;i<64; i++){
-                if(ColourBuffer[i>>3][i&7] != bg){
-                    fg = ColourBuffer[i>>3][i&7];
-                    break;
+            if(ColourBuffer[0][0] != 0){
+                
+                printf(".\n");
+                fg = ColourBuffer[0][0];
+                for(int i=0;i<64; i++){
+                    if(ColourBuffer[i>>3][i&7] != fg){
+                        bg = ColourBuffer[i>>3][i&7];
+                        printf("%d\t%d\n",fg, bg);
+                        break;
+                    }
+                }
+            }else{
+                printf("#\n");
+                bg = ColourBuffer[0][0];
+                for(int i=0;i<64; i++){
+                    if(ColourBuffer[i>>3][i&7] != bg){
+                        fg = ColourBuffer[i>>3][i&7];
+                        break;
+                    }
                 }
             }
+
             
-            bright = (bg >= 8 || fg >= 8) ? 1:0;
+            
+            bright = (fg >= 8) ? 1:0;
 
             Attributes[x][y] = 0;
             if(bright){
@@ -295,7 +321,7 @@ void Match_Img2Font(char Img[32][24][8], char Font[256][8], unsigned char Tile[3
 
 void Pack_Img(unsigned char Tiles[32][24], char Cols[32][24]){
 
-    FILE *out = fopen("./out.bin", "wb");
+    FILE *out = fopen("./Menu_Data.bin", "wb");
 
     for(int y = 0; y < 24; y++){
         for(int x = 0; x < 32; x++){
@@ -312,6 +338,39 @@ void Pack_Img(unsigned char Tiles[32][24], char Cols[32][24]){
     return;
 }
 
+void Pack_Font(char Tiles[256][8]){
 
+    FILE *out = fopen("Packed_Font.bin", "wb");
 
+    for(int t = 0; t < 256; t++){
+        for(int b = 0; b < 8; b++){
+            fputc(Tiles[t][b], out);
+        }
+    }
+
+    fclose(out);
+    return;
+}
+
+void Print_ImgTiles(char Tiles[32][24][8]){
+
+    for(int y = 0; y < 24; y++){
+        for(int x = 0; x < 32; x++){
+            for(int b = 0; b < 8; b++){
+            printf("%c", (Tiles[x][y][b] & 0x80 ? '#':' '));
+            printf("%c", (Tiles[x][y][b] & 0x40 ? '#':' '));
+            printf("%c", (Tiles[x][y][b] & 0x20 ? '#':' '));
+            printf("%c", (Tiles[x][y][b] & 0x10 ? '#':' '));
+            printf("%c", (Tiles[x][y][b] & 0x08 ? '#':' '));
+            printf("%c", (Tiles[x][y][b] & 0x04 ? '#':' '));
+            printf("%c", (Tiles[x][y][b] & 0x02 ? '#':' '));
+            printf("%c", (Tiles[x][y][b] & 0x01 ? '#':' '));
+            printf("\n");   
+
+            }
+        }
+    }
+    return;
+
+}
 

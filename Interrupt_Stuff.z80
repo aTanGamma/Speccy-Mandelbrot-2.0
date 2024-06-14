@@ -1,24 +1,45 @@
     MODULE Interrupt_Timer
 
 Start
-/*
+    di
     push af
+    push bc
 
-    ld a, (Timer+2)
-    or a
-    add 1
-    ld (Timer+2), a
+    ld bc, $BFFE; Test to read enter
+    in a, (c)
+    and %00000001
+    jr z, Check_State
 
-    ld a, (Timer+1)
-    adc 0
-    ld (Timer+1), a
+    jp Exit_Int
 
-    ld a, (Timer)
-    adc 0
-    ld (Timer), a
+Check_State
+    ld a, (State)
+    
+    cp $FF
+    jp z, Menu
 
+    cp $01
+    jp z, Finished_Calc
+
+    ld a, $FF   ;Failsafe if in strange state
+    ld (State), a
+    jp Exit_Int
+
+Menu
+    
+    ld a, 0
+    ld (State), a
+    jp Exit_Int
+
+Finished_Calc
+
+    ld a, $FF
+    ld (State), a
+    jp Exit_Int
+
+Exit_Int
+    pop bc
     pop af
-*/
     ei
     reti
 

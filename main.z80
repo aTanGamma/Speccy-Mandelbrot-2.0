@@ -20,8 +20,10 @@ Byte_To_Fill_1 = $8008
 
 No_Iterations = $8009
 
+State = $800A   ;Used to determine what to do
 
-Timer = $800A
+LastKeys = $800B    ;3 bytes for all keys pressed last frame to stop multipressing
+                    ;Hexadecimal digits, break and enter
 
 /*----= Definitions =----*/
 
@@ -42,8 +44,8 @@ _Y_STEP_SIZE = $FFFC    ;- 0.25/96 = 1111.1111 1111 1100
 
 _BORDER_COLOUR = 0 ;Black border
 
-_MAX_ITERATIONS = 255
-_MIDS_THRESHOLD = 16
+_MAX_ITERATIONS = 16
+_MIDS_THRESHOLD = 12
 _DARK_THRESHOLD = 8
 
 _SCREEN_BITMAP_START = $4000
@@ -54,7 +56,8 @@ _COL_ATR_LENGTH = $0300
 
 _WHITE_BLACK = %01000111    ;no flash, bright, black paper, white ink
 
-_FONT_LOCATION = $A000  ;Also the first Character
+_FONT_LOCATION = $6000  ;Also the first Character
+_MENU_DATA = $6800
 
 /*----= Main Code =----*/
 
@@ -64,32 +67,53 @@ _FONT_LOCATION = $A000  ;Also the first Character
 
     org $8100
 
-    MODULE Main_Loop
+    INCLUDE "StateMachine.z80"
 
+    MODULE Calculate
 
-Start
+Setup
 
-;   Rough layout:
+Clear_Screen
 
-;   Clear screen & Attributes
-;   setup loop for line:
-;     > Set up loop for byte
-;     > Iterate each pixel and plot result in byte
-;     > After 8 pixels, increment hl for next byte & plot byte
-;     > After 32, move to next line
+    ld a, 0
+    ld (_SCREEN_BITMAP_START), a
+    ld de, _SCREEN_BITMAP_START+1
+    ld bc, _BITMAP_LENGTH
+    ld hl, _SCREEN_BITMAP_START
 
+    ldir
 
-    di
+Set_Attributes
 
-    im 2
-    ld a, $39   ;Makes interrupt jump to somewhere in page $39xx - All bytes are $FF
-    ld i, a     ;CPU then goes to location $FFFF to execute a relative jump, which happens to make jr $F3, so a jp can be put 13 bytes behind $FFFF
+    ld a, _WHITE_BLACK
+    ld hl, _COLOUR_ATTRIBUTES_START
+    ld (hl), a
+    ld de, _COLOUR_ATTRIBUTES_START+1
+    ld bc, _COL_ATR_LENGTH
 
-    ei
+    ldir
 
-Main
+Set_Border
 
-    call Setup.Clear_Screen
+    ld a, _BORDER_COLOUR
+    out (254), a  ;Set border colour Black
+
+Preset_Variables
+
+    ld a, 0
+    ld (X_Byte), a
+    ld (X_Pixel), a
+    ld (Line_No), a
+    ld (Byte_To_Fill_0), a
+    ld (Byte_To_Fill_1), a    ;Reset screen stuff
+
+    ld bc, _INITIAL_X
+    ld (Current_X),bc
+    ld (Iterator.Working_X),bc
+
+    ld bc, _INITIAL_Y
+    ld (Current_Y),bc
+    ld (Iterator.Working_Y),bc
 
 Iterator
 
@@ -193,11 +217,11 @@ Inc_X_Byte
 
     ld a, (Byte_To_Fill_0)
     ld bc, (Line_No)
-    call Xor_Byte_Plotter.Start ;Plot finished byte
+    call Byte_Plotter.Start ;Plot finished byte
     ld a, (Byte_To_Fill_1)
     ld bc, (Line_No)
     inc c
-    call Xor_Byte_Plotter.Start ;Duplicate 1 line down
+    call Byte_Plotter.Start ;Duplicate 1 line down
 
     xor a
     ld (Byte_To_Fill_0), a
@@ -240,77 +264,19 @@ Step_Y_Coord
 
 Done
 
-    di
+    ld a, 1
+    ld (State), a
 
-    ;INCLUDE "Timer_Msg.z80"
+Calc_Done_Wait4Key
 
+    ld a, (State)
+    cp $FF
+    jp z, State_Machine.Draw_Menu_Init
+    
+    jr Calc_Done_Wait4Key
 
-End
-    jp End
-    im 1
-    ei
-
-    halt
-
-    ret
 
     ENDMODULE
-
-    MODULE Setup
-
-Clear_Screen
-
-    ld a, 0
-    ld (_SCREEN_BITMAP_START), a
-    ld de, _SCREEN_BITMAP_START+1
-    ld bc, _BITMAP_LENGTH
-    ld hl, _SCREEN_BITMAP_START
-
-    ldir
-
-Set_Attributes
-
-    ld a, _WHITE_BLACK
-    ld hl, _COLOUR_ATTRIBUTES_START
-    ld (hl), a
-    ld de, _COLOUR_ATTRIBUTES_START+1
-    ld bc, _COL_ATR_LENGTH
-
-    ldir
-
-Set_Border
-
-    ld a, _BORDER_COLOUR
-    out (254), a  ;Set border colour Black
-
-Preset_Variables
-
-    ld a, 0
-    ld (X_Byte), a
-    ld (X_Pixel), a
-    ld (Line_No), a
-    ld (Byte_To_Fill_0), a
-    ld (Byte_To_Fill_1), a    ;Reset screen stuff
-
-    ld (Timer), a
-    ld (Timer+1), a
-    ld (Timer+2), a     ;Reset Timer
-
-    ld bc, _INITIAL_X
-    ld (Current_X),bc
-    ld (Iterator.Working_X),bc
-
-    ld bc, _INITIAL_Y
-    ld (Current_Y),bc
-    ld (Iterator.Working_Y),bc
-
-    ret
-
-    ENDMODULE
-
-
-
-
 
     INCLUDE "Iterator.z80"
 
@@ -318,10 +284,8 @@ Preset_Variables
 
     INCLUDE "Interrupt_Stuff.z80"
 
-    org _FONT_LOCATION
-    INCLUDE "Font.z80"
+    INCLUDE "Menu.z80"
 
+    SAVESNA "Mandel.sna", State_Machine.Start
 
-    SAVESNA "Mandel.sna", Main_Loop.Start
-
-    SAVETAP "Mandel.tap", Main_Loop.Start
+    SAVETAP "Mandel.tap", State_Machine.Start

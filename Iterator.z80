@@ -70,7 +70,8 @@ Calc_X2
     bit 6, b  ;Check if X2 > 4
     jr nz, Exit  ;If X2 > 4, ans >= 0
 
-    ld (X2), bc ;Store X^2 in X2
+    push bc
+    push bc
 
 Calc_Y2
 
@@ -82,7 +83,18 @@ Calc_Y2
     call Fast_Square.Start    ;Calculates Y^2, returns result in BC (and A)
 
     bit 6, b  ;Check if Y2 > 4
-    jr nz, Exit  ;If Y2 > 4, ans >= 0    
+    jr z, Check_Radius  ;If Y2 > 4, ans >= 0 
+Exit_2pop
+
+    pop af
+    pop af
+
+    xor a
+    out (254), a  ;Set border colour Black  (Shows program working)
+    
+    pop af
+
+    ret ;Number of iterations returned in a    
 
 Check_Radius
 
@@ -92,16 +104,27 @@ Check_Radius
 
 ;   No 3rd byte needed as most extreme case is within range of numbers
 
-    ld hl, (X2)
+    pop hl
 
     add hl, bc  ;hl = X2 + Y2
     bit 6, h    ;Slightly faster test of size
 
-    jp nz, Exit
+    jp z, Calc_Next_X
+
+Exit_1pop
+
+    pop af
+
+    xor a
+    out (254), a  ;Set border colour Black  (Shows program working)
+    
+    pop af
+
+    ret ;Number of iterations returned in a  
 
 Calc_Next_X
 
-    ld hl, (X2)
+    pop hl
 
     or a
     sbc hl, bc  ;hl = X2 - Y2

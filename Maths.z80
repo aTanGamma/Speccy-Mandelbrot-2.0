@@ -1,6 +1,6 @@
 ; This file contains maths functions
 
-    MODULE Xor_Byte_Plotter
+    MODULE Byte_Plotter
 Start
 ;   Plots a given byte to the screen at a given line and byte no.
 
@@ -31,61 +31,72 @@ Start
 
     pop af   ;Return a
 
-    xor (hl)    ;xor byte in
-    ld (hl), a  ;Store byte
+    ld (hl), a    ;store byte in
 
     ret
 
     ENDMODULE
 
 
-    MODULE Xor_Character
+    MODULE Plot_Character
 Start
-;   Set ix to location of the start of a character
-;   Set bc to Screen position as for byte plotter
 
-    ld de, bc
+;   Set bc to Font Data
+;   Set de to Character position, [y][x]
+
+Get_Byte_Position
     
-    ld a, (ix+0)
-    call Xor_Byte_Plotter.Start
-    inc e
-    ld bc, de
+    ld a, d ;X position left as is
+    .5 sla a
+    or e
+    ld e, a ;put lowest 3 bits of line no. into position
 
-    ld a, (ix+1)
-    call Xor_Byte_Plotter.Start
-    inc e
-    ld bc, de
+    ld a, %00011000
+    and d   ;Extract highest bits of position
+    or %01000000
+    ld d, a ;hl holds pointer to top left of character
 
-    ld a, (ix+2)
-    call Xor_Byte_Plotter.Start
-    inc e
-    ld bc, de
+Plot_Bytes
 
-    ld a, (ix+3)
-    call Xor_Byte_Plotter.Start
-    inc e
-    ld bc, de
+    ld a, (bc)
+    ld (de), a
+    inc c
+    inc d
 
-    ld a, (ix+4)
-    call Xor_Byte_Plotter.Start
-    inc e
-    ld bc, de
+    ld a, (bc)
+    ld (de), a
+    inc c
+    inc d
 
-    ld a, (ix+5)
-    call Xor_Byte_Plotter.Start
-    inc e
-    ld bc, de
+    ld a, (bc)
+    ld (de), a
+    inc c
+    inc d
 
-    ld a, (ix+6)
-    call Xor_Byte_Plotter.Start
-    inc e
-    ld bc, de
+    ld a, (bc)
+    ld (de), a
+    inc c
+    inc d
 
-    ld a, (ix+7)
-    call Xor_Byte_Plotter.Start
-    inc e
-    ld bc, de
+    ld a, (bc)
+    ld (de), a
+    inc c
+    inc d
 
+    ld a, (bc)
+    ld (de), a
+    inc c
+    inc d
+
+    ld a, (bc)
+    ld (de), a
+    inc c
+    inc d
+
+    ld a, (bc)
+    ld (de), a
+    inc c
+    inc d
 
     ret
 
@@ -100,12 +111,6 @@ Num_B = $8042   ;2-bytes
 Result = $8044  ;4-bytes
 
 No_Negs = $8048 ;Byte to determine the sign of ans
-
-Mid_0 = $8050
-Mid_1 = $8052
-Mid_2 = $8054
-Mid_3 = $8056
-;Temporary for bracket expansion
 
 SumTable = $9000
 DiffTable = $9400
@@ -165,7 +170,7 @@ AaCc_Mult
     jr nz, 1F
 
     ld hl, 0
-    ld (Mid_0), hl
+    push hl
     jr AaDd_Mult
 
 1
@@ -174,7 +179,7 @@ AaCc_Mult
     jr nz, 1F
     
     ld hl, 0
-    ld (Mid_0), hl
+    push hl
     jr AaDd_Mult
 1
     add b   ;$Aa + $Cc
@@ -221,8 +226,9 @@ AaCc_Mult
     or a
     sbc hl, de  ;Aa * Cc now in hl
 
-    ld (Mid_0), hl  ;Put Aa * Cc into Mid_0 for later
-
+    ;ld (Mid_0), hl  ;Put Aa * Cc into Mid_0 for later
+    push hl
+    
 AaDd_Mult
 
     ld c, 0   ;Get pointer into SumTable
@@ -232,7 +238,7 @@ AaDd_Mult
     jr nz, 1F
 
     ld hl, 0
-    ld (Mid_1), hl
+    push hl
     jr BbCc_Mult
 1
     ld l, a
@@ -242,7 +248,7 @@ AaDd_Mult
     jr nz, 1F
 
     ld hl, 0
-    ld (Mid_1), hl
+    push hl
     jr BbCc_Mult
 1
     or a
@@ -290,7 +296,7 @@ AaDd_Mult
     or a
     sbc hl, de  ;Aa * Cc now in hl
 
-    ld (Mid_1), hl  ;Put Aa * Dd into Mid_1 for later
+    push hl  ;Put Aa * Dd into Mid_1 for later
 
 BbCc_Mult
 
@@ -301,7 +307,7 @@ BbCc_Mult
     jr nz, 1F
 
     ld hl, 0
-    ld (Mid_2), hl
+    push hl
     jr BbDd_Mult
 
 1
@@ -312,7 +318,7 @@ BbCc_Mult
     jr nz, 1F
 
     ld hl, 0
-    ld (Mid_2), hl
+    push hl
     jr BbDd_Mult
 
 1
@@ -361,7 +367,8 @@ BbCc_Mult
     or a
     sbc hl, de  ;Bb * Cc now in hl
 
-    ld (Mid_2), hl  ;Put Bb * Cc into Mid_1 for later
+    push hl  ;Put Bb * Cc into Mid_1 for later
+
 
 BbDd_Mult
 
@@ -429,56 +436,39 @@ BbDd_Mult
     
     or a
     sbc hl, de  ;Bb * Dd now in hl
-
+    ex de, hl
+    
 Sum_Temp_Answers
 
-    push hl ;Store lowest byte in stack
-    ld hl, (Mid_2)
-    ld bc, (Mid_1)
-    ld d, 0 ;Keeps tally of carries to top byte
+    ld a, 0 ;keeps track of carries to highest byte
 
+    pop hl
+    pop bc
 
-    add hl, bc  ;Add middle partials
-
+    add hl, bc  ;Add 2^8s together
     jr nc, 1F
 
-    inc d
+    inc a   ;Carry to top
 1
-    ld bc, hl   ;Sum of Mid_1 and Mid_2 -> BC
-    
-    pop hl
-    ld e, l ;Put lowest byte in e for later
+    ld c, d
+    ld b, 0
 
+    add hl, bc
+
+    ld d, l ;Bottom 2 bytes finished
     ld l, h
-    ld h, 0 ;Put top byte of bottom partial in l
+    ld h, 0
+    pop bc
 
-    add hl, bc  ;Add top byte of Mid_3
-    jr nc, 2F
+    adc hl, bc  ;Add on top byte (plus previous carry)
+    add l   ;Add on previous carries
+    ld l, a
+    jr nc, 3F   ;Add on first carry if needed
 
-    inc d
-2
+    inc h
+3   
+    ld bc, hl   ;Finished answer in bcde
 
-    ld a, (Mid_0)
-    ld b, a
-    ld c, 0
-
-    add hl, bc  ;Add LSB of Mid_0 to running total of Result
-    jr nc, 3F
-
-    inc d
-3
-    ld a, (Mid_0 + 1)
-    add d
-
-;   Result_0 in a
-;   Result_1&2 in hl
-;   Result_3 in d
-
-    ld b, a
-    ld c, h
-    ld d, l
-
-;   Result now in bcde
 Shift_Anwser
    
     sla e   ;Shift answer up by 4 bytes to isolate useful bits
@@ -568,10 +558,19 @@ Get_A2
     ld h, $98
     
     ld a, b ;Use b for offset into square table
-    sla a   ;Double for 16-bit values
-    jr nc, 1F
-    inc h
+
+    or a
+    jr nz, 1F
+
+    ld hl, 0
+    push hl
+    jp Get_B2
+
 1
+    sla a   ;Double for 16-bit values
+    jr nc, 2F
+    inc h
+2
     ld l, a
     
     ld a, (hl)  ;Get lo-byte
@@ -580,17 +579,26 @@ Get_A2
     ld a, (hl)  ;Get Hi-byte
     ld d, a ;Put in d
     ld hl, de
-    ld (A2), hl ;Store to A^2
+    push hl ;Store to A^2
 
 
 Get_B2
     ld h, $98
 
     ld a, c
-    sla a
-    jr nc, 1F
-    inc h
+    
+    or a
+    jr nz, 1F
+
+    ld hl, 0
+    push hl
+    jp Get_Sum_AB
+
 1
+    sla a
+    jr nc, 2F
+    inc h
+2
     ld l, a
     
     ld a, (hl)
@@ -599,7 +607,7 @@ Get_B2
     ld a, (hl)
     ld d, a
     ld hl, de
-    ld (B2), hl ;As above for B^2
+    push hl ;As above for B^2
 
 Get_Sum_AB
 
@@ -655,7 +663,7 @@ Get_Diff_AB
 Compile_Ans
 
                 ;hl = 2AB
-    ld de, (B2) ;de = B^2
+    pop de ;de = B^2
 
     ld a, l
     add d   ;a = Byte 2
@@ -664,7 +672,7 @@ Compile_Ans
 1
     ld d, a ;de = Lowest 2 bytes of result
 
-    ld bc, (A2) ;bc = A^2
+    pop bc ;bc = A^2
     ld a, h
 
     add c

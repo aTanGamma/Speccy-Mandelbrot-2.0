@@ -1,0 +1,74 @@
+; Code to drive the menu screen
+
+    org _FONT_LOCATION
+    INCBIN "Packed_Font.bin"
+    org _MENU_DATA
+    INCBIN "Menu_Data.bin"
+
+    MODULE Draw_Menu
+Init
+    ld de, 0    ;Screen position (yx)
+    ld bc, 0    ;Byte counter
+    push bc
+Loop_Over_Screen
+
+    ld hl, _MENU_DATA
+    pop bc
+    add hl, bc
+    push bc ;Setup pointer to _MENU_DATA + 300 - bc
+
+    ld a, (hl)
+    ld c, a
+    ld b, 0 ;Get char. id
+
+    sla c
+    rl b
+    sla c
+    rl b
+    sla c
+    rl b    ;Multiply id by 8 for pointer
+
+    ld hl, _FONT_LOCATION
+    add hl, bc
+    ld bc, hl   ;Get pointer to Font data for tile
+
+    push de
+
+    call Plot_Character.Start
+
+    pop de
+    pop bc
+    inc bc
+    push bc
+
+Goto_Next_Char
+   
+    inc e
+    ld a, 32    ;Check if at end of line
+    cp e
+    jr nz, Loop_Over_Screen
+
+    ld e, 0
+    inc d
+    ld a, 24
+    cp d
+
+    jr nz, Loop_Over_Screen
+
+Blit_Colours
+
+    pop af
+
+    di
+    ld hl, _MENU_DATA+$300
+    ld de, _COLOUR_ATTRIBUTES_START
+    ld bc, $300
+    ldir
+    ei
+
+    ret
+
+    ENDMODULE
+
+
+

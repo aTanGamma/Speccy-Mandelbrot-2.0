@@ -1,0 +1,34 @@
+    MODULE State_Machine
+
+Start
+
+    di
+
+    im 2
+    ld a, $39   ;Makes interrupt jump to somewhere in page $39xx - All bytes are $FF
+    ld i, a     ;CPU then goes to location $FFFF to execute a relative jump, which happens to make jr $F3, so a jp can be put 13 bytes behind $FFFF
+
+    ei
+
+Draw_Menu_Init
+
+    call Draw_Menu.Init
+
+    xor a
+    out (254), a  ;Set border colour Black
+    ld a, $FF   ;Nothing pressed, menu screen
+    ld (State), a
+
+Menu_Wait4Key
+
+    ld a, (State)   ;List of places to jump to
+    cp 0
+    jp nz, Menu_Wait4Key
+
+    jp Calculate.Setup
+
+
+    jp Draw_Menu_Init
+
+    ENDMODULE
+
