@@ -25,26 +25,26 @@ Timer = $800A
 
 /*----= Definitions =----*/
 
-/*
+
 _INITIAL_X = $E000  ;-2
 _INITIAL_Y = $1000  ;+1
 
 _X_STEP_SIZE = $0050    ;+ 2.5/128 = 0000.0000 0011 0000 
 _Y_STEP_SIZE = $FFAB    ;- 2/96    = 1111.1111 1010 1011
-*/
 
+/*
 _INITIAL_X = $F000  ;- 1.0000 = 1111.0000 0000 0000
 _INITIAL_Y = $0500  ;+ 0.3125 = 0000.0101 0000 0000
 
 _X_STEP_SIZE = $0004    ;+ 0.50/256 = 0000.0000 0000 0100
 _Y_STEP_SIZE = $FFFC    ;- 0.25/96 = 1111.1111 1111 1100
-
+*/
 
 _BORDER_COLOUR = 0 ;Black border
 
-_MAX_ITERATIONS = 256
-_MIDS_THRESHOLD = 64
-_DARK_THRESHOLD = 32
+_MAX_ITERATIONS = 255
+_MIDS_THRESHOLD = 16
+_DARK_THRESHOLD = 8
 
 _SCREEN_BITMAP_START = $4000
 _BITMAP_LENGTH = $1800
@@ -97,18 +97,13 @@ Iterator
 
 Determine_Pixel_State
 
-    ld (No_Iterations), a
-
-    or a
     cp _MAX_ITERATIONS
 
     jr z, Rotate_In_2_Pixels  ;Skip if iterations < MAX
 
-    or a
     cp _MIDS_THRESHOLD ;Compare to threshold to see whether to shade
     jr nc, Rotate_In_Mid_Shaded
 
-    or a
     cp _DARK_THRESHOLD ;Compare to threshold to see whether to shade
     jr nc, Rotate_In_Dark_Shaded
 
@@ -117,31 +112,27 @@ Determine_Pixel_State
 Rotate_In_2_Pixels
     
     ld a, (Byte_To_Fill_0)
-    sla a
-    sla a
-    add a,3
+    sll a
+    sll a
     ld (Byte_To_Fill_0), a
 
     ld a, (Byte_To_Fill_1)
-    sla a
-    sla a
-    add a,3
+    sll a
+    sll a
     ld (Byte_To_Fill_1), a    ;Put 2 pixel in a holding byte (will be plotted every 4 px)
 
     jp Inc_X_Px
 
-Rotate_In_Mid_Shaded
+Rotate_In_Mid_Shaded    ;sll is fine, just undocumented for some reason
 
     ld a, (Byte_To_Fill_0)
     sla a
-    sla a
-    add a,1
+    sll a
     ld (Byte_To_Fill_0), a
 
     ld a, (Byte_To_Fill_1)
+    sll a
     sla a
-    sla a
-    add a,2
     ld (Byte_To_Fill_1), a  ;Put 2 pixel in a holding byte (will be plotted every 4 px)
 
     jp Inc_X_Px
@@ -151,13 +142,11 @@ Rotate_In_Dark_Shaded
     ld a, (Byte_To_Fill_0)
     sla a
     sla a
-    add a,0
     ld (Byte_To_Fill_0), a
 
     ld a, (Byte_To_Fill_1)
+    sll a
     sla a
-    sla a
-    add a,2
     ld (Byte_To_Fill_1), a  ;Put 2 pixel in a holding byte (will be plotted every 4 px)
 
     jp Inc_X_Px
@@ -176,17 +165,16 @@ Rotate_In_2_Blank
 
 Inc_X_Px
 
-    ;ld a, %00010100
-    ;out ($FE), a
-    ;.16 nop
-    ld a, 4
+    ld a, %00010110
     out ($FE), a
+    .8 nop
+    ld a, 4
+    out ($FE), a    ;Sound code
 
-    ld a, (X_Pixel)
-    inc a
-    ld (X_Pixel), a ;Increment Pixel position
-
-    and %00000011   ;Xpx % 4
+    ld hl, X_Pixel    ;Increment Pixel position
+    inc (hl)
+    ld a, $03    ;Xpx % 4
+    and(hl)
 
     jr z, Inc_X_Byte
 
@@ -215,11 +203,10 @@ Inc_X_Byte
     ld (Byte_To_Fill_0), a
     ld (Byte_To_Fill_1), a
 
-    ld a, (X_Byte)
-    inc a
-    ld (X_Byte), a  ;Step to next byte
-
-    and %00011111   ;Byte# % 32
+    ld hl, X_Byte
+    inc (hl)    ;Step to next byte
+    ld a, %00011111
+    and (hl)
 
     jr nz, Step_X_Coord ;If next byte != 32 (or 0), step X as usual
 
@@ -233,13 +220,12 @@ Inc_Line_No
     ld (Line_No), a
 
     cp 192  ;Changed to do full screen
-
     jr z, Done
 
 Reset_X_Pos
 
     ld bc, _INITIAL_X
-    ld (Current_X), bc  ;Reset X_Pos to -2
+    ld (Current_X), bc  ;Reset X_Pos
 
 Step_Y_Coord
 
@@ -336,6 +322,6 @@ Preset_Variables
     INCLUDE "Font.z80"
 
 
-    SAVESNA "mandle.sna", Main_Loop.Start
+    SAVESNA "Mandel.sna", Main_Loop.Start
 
-    SAVETAP "Tape.tap", Main_Loop.Start
+    SAVETAP "Mandel.tap", Main_Loop.Start

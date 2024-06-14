@@ -1,7 +1,7 @@
     MODULE Interrupt_Timer
 
 Start
-
+/*
     push af
 
     ld a, (Timer+2)
@@ -18,7 +18,7 @@ Start
     ld (Timer), a
 
     pop af
-
+*/
     ei
     reti
 

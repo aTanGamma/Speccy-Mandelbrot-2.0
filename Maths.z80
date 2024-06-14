@@ -114,15 +114,9 @@ DiffTable = $9400
 
 Start
 
-    ld a, 0
-    out (254), a  ;Set border colour Black  (Looks Cooler)
+    xor a
 
-    ld (Result), a
-    ld (Result+1), a
-    ld (Result+2), a
-    ld (Result+3), a
-
-    ld l, 0     ;L will count the number of negative numbers in the next bit
+    ld l, a     ;L will count the number of negative numbers in the next bit
     
 Sign_Check_bc   ;Note: A = 0 still
 
@@ -131,14 +125,13 @@ Sign_Check_bc   ;Note: A = 0 still
 
     inc l       ;Count 1 negative number
 
-    ld a, $FF   ;Setup value to xor with
+    ld a,b
+    cpl
+    ld b, a ;Get complement of b
 
-    xor b       ;xor with FF (get complement)
-    ld b, a     ;Return comp to b
-
-    ld a, $FF     ;As above for c
-    xor c
-    ld c, a
+    ld a,c
+    cpl
+    ld c, a ;Get complement of c
 
     inc bc      ;Just adds 1 (properly) to bc
 
@@ -149,24 +142,19 @@ Sign_Check_de
 
     inc l       ;Count 1 negative number
 
-    ld a, $FF   ;Setup value to xor with
+    ld a, d
+    cpl
+    ld d, a
 
-    xor d       ;xor with FF (get complement)
-    ld d, a     ;Return comp to b
-
-    ld a, $FF     ;As above for c
-    xor e
-    ld e, a
+    ld a, e
+    cpl
+    ld e, a     ;get complement of de
 
     inc de      ;Just adds 1 (properly) to bc
 
-1   ld a,l
-    ld (No_Negs), a
+1   push hl ;Put # negatives on stack
 
-    ld hl, bc
-    ld (Num_A), hl
-
-    ld hl, de
+    ld (Num_A), bc
     ld (Num_B), de
 
 AaCc_Mult
@@ -184,7 +172,7 @@ AaCc_Mult
     ld a, d
     or a
     jr nz, 1F
-
+    
     ld hl, 0
     ld (Mid_0), hl
     jr AaDd_Mult
@@ -214,9 +202,7 @@ AaCc_Mult
     sub l   ;Get A-B
     jr nc, 2F   ;If borrow (carry flag), make -ve
 
-    ld l, $FF
-    xor l
-    inc a
+    neg ;negate a
 2
     sla a
     rl e
@@ -227,7 +213,7 @@ AaCc_Mult
     ld h, a
     
     ld e, (hl)
-    inc hl
+    inc l
     ld d, (hl)  ;Put ((A-B)^2)/4 in de
 
     ld hl, bc
@@ -285,9 +271,7 @@ AaDd_Mult
     sub l   ;Get A-B
     jr nc, 2F   ;If borrow (carry flag), make -ve
 
-    ld l, $FF
-    xor l
-    inc a
+    neg
 2
     sla a
     rl e
@@ -298,7 +282,7 @@ AaDd_Mult
     ld h, a
     
     ld e, (hl)
-    inc hl
+    inc l
     ld d, (hl)  ;Put ((A-B)^2)/4 in de
 
     ld hl, bc
@@ -358,9 +342,7 @@ BbCc_Mult
     sub l   ;Get A-B
     jr nc, 2F   ;If borrow (carry flag), make -ve
 
-    ld l, $FF
-    xor l
-    inc a
+    neg
 2
     sla a
     rl e
@@ -371,7 +353,7 @@ BbCc_Mult
     ld h, a
     
     ld e, (hl)
-    inc hl
+    inc l
     ld d, (hl)  ;Put ((A-B)^2)/4 in de
 
     ld hl, bc
@@ -429,9 +411,7 @@ BbDd_Mult
     sub l   ;Get A-B
     jr nc, 2F   ;If borrow (carry flag), make -ve
 
-    ld l, $FF
-    xor l
-    inc a
+    neg
 2
     sla a
     rl e
@@ -442,7 +422,7 @@ BbDd_Mult
     ld h, a
     
     ld e, (hl)
-    inc hl
+    inc l
     ld d, (hl)  ;Put ((A-B)^2)/4 in de
 
     ld hl, bc
@@ -452,10 +432,9 @@ BbDd_Mult
 
 Sum_Temp_Answers
 
-    ld (Result+2), hl ;Store lowest byte in result
+    push hl ;Store lowest byte in stack
     ld hl, (Mid_2)
-    ld bc, hl
-    ld hl, (Mid_1)
+    ld bc, (Mid_1)
     ld d, 0 ;Keeps tally of carries to top byte
 
 
@@ -465,9 +444,9 @@ Sum_Temp_Answers
 
     inc d
 1
-    ld bc, hl
+    ld bc, hl   ;Sum of Mid_1 and Mid_2 -> BC
     
-    ld hl, (Result+2)
+    pop hl
     ld e, l ;Put lowest byte in e for later
 
     ld l, h
@@ -500,8 +479,7 @@ Sum_Temp_Answers
     ld d, l
 
 ;   Result now in bcde
-Shift_Anser
-    or a
+Shift_Anwser
    
     sla e   ;Shift answer up by 4 bytes to isolate useful bits
     rl d
@@ -525,18 +503,17 @@ Shift_Anser
 
 Fix_Sign
 
-    ld a, (No_Negs)
-    or a
-    rr a
+    pop hl
+    sra l
 
     jr nc, Return_Ans
 
-    ld a, $FF
-    xor b
+    ld a, b
+    cpl
     ld b, a
 
-    ld a, $FF
-    xor c
+    ld a, c
+    cpl
     ld c, a
 
     inc bc  ;Answer in bc now fully ready
@@ -576,12 +553,12 @@ Make_Num_Pos
     bit 7, b
     jr z, Get_A2
 
-    ld a, $FF
-    xor b
+    ld a, b
+    cpl
     ld b, a
 
-    ld a, $FF
-    xor c
+    ld a, c
+    cpl
     ld c, a
 
     inc bc  ;Make number +ve
@@ -599,7 +576,7 @@ Get_A2
     
     ld a, (hl)  ;Get lo-byte
     ld e, a ;Put in e
-    inc hl
+    inc l
     ld a, (hl)  ;Get Hi-byte
     ld d, a ;Put in d
     ld hl, de
@@ -618,7 +595,7 @@ Get_B2
     
     ld a, (hl)
     ld e, a
-    inc hl
+    inc l
     ld a, (hl)
     ld d, a
     ld hl, de
@@ -637,8 +614,7 @@ Get_Sum_AB
     sla e
     rl d
 
-    or a
-    adc hl, de  ;Get final pointer for Aa+Bb
+    add hl, de  ;Get final pointer for Aa+Bb
 
     ld a, (hl)
     ld e, a
@@ -655,15 +631,13 @@ Get_Diff_AB
     ld bc, 0    ;Finally don't need bc any more
     jr nc, 1F
 
-    xor $FF
-    inc a
+    neg
 1
     ld c, a
     sla c
     rl b    ;Double pointer
 
-    or a
-    adc hl, bc
+    add hl, bc
     
     ld a, (hl)
     ld c, a
@@ -680,55 +654,53 @@ Get_Diff_AB
 
 Compile_Ans
 
-    ld de, hl   ;de = 2AB
-    ld hl, B2   ;hl = B^2
+                ;hl = 2AB
+    ld de, (B2) ;de = B^2
 
-    ld a, e
-    add h   ;a = Byte 2
-    jr nc, 1F
-    inc d
-1
-    ld h, a ;hl = Lowest 2 bytes of result
-    ld bc, hl   ;bc = Lowest 2 bytes
-
-    ld hl, (A2) ;hl = A^2
-    ld a, d
-
-    add l
+    ld a, l
+    add d   ;a = Byte 2
     jr nc, 1F
     inc h
 1
-    ld l, a ;hl = Top short
-            ;bc = Bottom short
+    ld d, a ;de = Lowest 2 bytes of result
+
+    ld bc, (A2) ;bc = A^2
+    ld a, h
+
+    add c
+    jr nc, 1F
+    inc b
+1
+    ld c, a ;bc = Top short
     
 Shift_Ans
 
-    sla c
+    sla e
+    rl d
+    rl c
     rl b
-    rl l
-    rl h
 
-    sla c
+    sla e
+    rl d
+    rl c
     rl b
-    rl l
-    rl h
 
-    sla c
+    sla e
+    rl d
+    rl c
     rl b
-    rl l
-    rl h
 
-    sla c
-    rl b
-    rl l
-    rl h    ;Shift answer up
+    sla e
+    rl d
+    rl c
+    rl b    ;Shift answer up
 
 Return_Ans
 
-    ld b, h
-    ld c, l ;put answer in bc
+    ld a, 1
+    out ($FE), a
 
-    ret
+    ret ;return answer in bc
 
     org $9000
     INCBIN "./QuarterSquare_Table.bin"

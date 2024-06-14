@@ -20,7 +20,7 @@ Temp_Space = $80F0  ;16 bytes free for general purpose
 /*
     General Proc:
 
-    Z1 = Z0^2 + XY
+    Z_1 = Z_0^2 + XY
 
     X' = X^2 - Y^2 + X0
 
@@ -50,48 +50,39 @@ Init
     ld a, 2
     out (254), a  ;Set border colour Red    (Shows program working)
 
-    ld a, 0
-    ld (Iteration), a   ;Initialise iteration counter to 0
+    xor a   ;Initialise iteration counter to 0
+    push af ;Push to stack
 
-    ld bc, (Current_X)
-    ld (Working_X), bc
+    ld hl, (Current_X)
+    ld (Working_X), hl
+    ld bc, hl
 
-    ld bc, (Current_Y)
-    ld (Working_Y), bc  ;Make a copy of X&Y
+    ld hl, (Current_Y)
+    ld (Working_Y), hl  ;Make a copy of X&Y
 
 Calc_X2
 
-    ld bc, (Working_X)
-    ld d, b
-    ld e, c ;Slightly quicker than loading from memory (-2 cycles)
-
     ld a, 5
-    out ($FE), a
-    xor a
-    out ($FE), a    ;Blip of cyan
+    out ($FE), a    ;Cyan border
 
     call Fast_Square.Start    ;Calculates X^2, returns result in BC (and A)
 
-    ld a, b
-    cp $40  ;Check if X2 > 4 (a - b)
-    jp p, Exit  ;If X2 > 4, ans >= 0
+    bit 6, b  ;Check if X2 > 4
+    jr nz, Exit  ;If X2 > 4, ans >= 0
 
     ld (X2), bc ;Store X^2 in X2
 
 Calc_Y2
 
     ld bc, (Working_Y)
-    ld d,b
-    ld e,c
 
     ld a, 2
-    out ($FE), a
-    xor a
-    out ($FE), a    ;Blip of red
+    out ($FE), a    ;Red Border
 
     call Fast_Square.Start    ;Calculates Y^2, returns result in BC (and A)
 
-    ld (Y2), bc ;Store Y^2 in Y2
+    bit 6, b  ;Check if Y2 > 4
+    jr nz, Exit  ;If Y2 > 4, ans >= 0    
 
 Check_Radius
 
@@ -102,27 +93,21 @@ Check_Radius
 ;   No 3rd byte needed as most extreme case is within range of numbers
 
     ld hl, (X2)
-    ld bc, (Y2)
 
     add hl, bc  ;hl = X2 + Y2
-    
-    ld a, $40
-    sub h
+    bit 6, h    ;Slightly faster test of size
 
-    jp m, Exit
+    jp nz, Exit
 
 Calc_Next_X
 
     ld hl, (X2)
-    ld bc, (Y2)
 
     or a
     sbc hl, bc  ;hl = X2 - Y2
 
     ld bc, (Current_X)
     add hl, bc  ;hl = Next_X
-
-    ld (Next_X), hl
 
     ld a, h
     cp $20  ;Check if Next_X > 2
@@ -131,13 +116,13 @@ Calc_Next_X
 
 Calc_Next_Y
 
+    ld (Next_X), hl
+
     ld bc, (Working_X)
     ld de, (Working_Y)
 
     ld a, 7
-    out ($FE), a
-    xor a
-    out ($FE), a    ;Blip of yellow
+    out ($FE), a    ;White Border
 
     call Table_Mult.Start
 
@@ -159,13 +144,14 @@ Move_Next_Working_Coords
 
     ld hl, (Next_X)
     ld (Working_X), hl  ;Working X/Y ready for next iteration
+    ld bc, hl   ;Saves redundant memory read
 
 Count_Iterations
 
-    ld a, (Iteration)
+    pop af
     inc a
     cp _MAX_ITERATIONS
-    ld (Iteration), a
+    push af
 
     jp nz, Calc_X2
 
@@ -173,10 +159,10 @@ Exit
 
 ;   Iterations = 51 - b
 
-    ld a, 0
+    xor a
     out (254), a  ;Set border colour Black  (Shows program working)
     
-    ld a, (Iteration)
+    pop af
 
     ret ;Number of iterations returned in a
 
