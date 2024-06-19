@@ -1,18 +1,60 @@
-    MODULE Interrupt_Timer
+    MODULE Interrupt_ReadKeys
 
 Start
     di
     push af
     push bc
+    push hl
 
-    ld bc, $BFFE; Test to read enter
+Read_Keys
+
+    ld a, (NewKeys)
+    ld (OldKeys), a
+    ld a, (NewKeys+1)
+    ld (OldKeys+1), a
+    ld a, (NewKeys+2)
+    ld (OldKeys+2), a
+    ld a, (NewKeys+3)
+    ld (OldKeys+3), a
+    ld a, (NewKeys+4)
+    ld (OldKeys+4), a
+    ld a, (NewKeys+5)
+    ld (OldKeys+5), a
+    ld a, (NewKeys+6)
+    ld (OldKeys+6), a   ;Move prev. frame data
+
+    ld bc, $FEFE        ;Shift, Z, X, C, V
     in a, (c)
-    and %00000001
-    jr z, Check_State
+    ld (NewKeys), a
 
-    jp Exit_Int
+    ld bc, $FDFE        ;A, S, D, F, G
+    in a, (c)
+    ld (NewKeys+1), a  
+
+    ld bc, $FBFE        ;Q, W, E, R, T
+    in a, (c)
+    ld (NewKeys+2), a  
+
+    ld bc, $F7FE        ;1, 2, 3, 4, 5
+    in a, (c)
+    ld (NewKeys+3), a  
+
+    ld bc, $EFFE        ;6, 7, 8, 9, 0
+    in a, (c)
+    ld (NewKeys+4), a  
+
+    ld bc, $BFFE        ;Enter, L, K, J, H
+    in a, (c)
+    ld (NewKeys+5), a
+
+    ld bc, $7FFE        ;Break/Space, Symbol, M, N, B
+    in a, (c)
+    ld (NewKeys+6), a
+
+    ;Read all relevant rows on keyboard
 
 Check_State
+
     ld a, (State)
     
     cp $FF
@@ -21,23 +63,285 @@ Check_State
     cp $01
     jp z, Finished_Calc
 
+    cp $00
+    jp z, Calculating
+
     ld a, $FF   ;Failsafe if in strange state
     ld (State), a
     jp Exit_Int
 
 Menu
+;   Read key
+;   If something pressed, signal with special state
+;   Check by comparing new and old byte
+;   Only say key pressed if not pressed on previous frame.
+
+    xor a
+    ld hl, PressedKeys
+    ld (hl), a
+    inc hl
+    ld (hl), a
+    inc hl
+    ld (hl), a
+    ld hl, PressedKeys  ;Reset key buffer
+
+Menu_T_Shift
+
+    ld a, (OldKeys)
+    and %00000001
+    jr z, Menu_T_1  ;Pressed already, skip to next check
+
+    ld a, (NewKeys) ;Test current frame
+    and %00000001
+    jr nz, Menu_T_1 ;Not pressed
+
+    set 7, (hl) ;Set key's bit
+
+Menu_T_1
+
+    ld a, (OldKeys+3)
+    and %00000001
+    jr z, Menu_T_2  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+3) ;Test current frame
+    and %00000001
+    jr nz, Menu_T_2 ;Not pressed
+
+    set 7, (hl) ;Set key's bit
+
+Menu_T_2
+
+    ld a, (OldKeys+3)
+    and %00000010
+    jr z, Menu_T_3  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+3) ;Test current frame
+    and %00000010
+    jr nz, Menu_T_3 ;Not pressed
+
+    set 5, (hl) ;Set key's bit
+
+Menu_T_3
+
+    ld a, (OldKeys+3)
+    and %00000100
+    jr z, Menu_T_4  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+3) ;Test current frame
+    and %00000100
+    jr nz, Menu_T_4 ;Not pressed
+
+    set 4, (hl) ;Set key's bit
+
+Menu_T_4
+
+    ld a, (OldKeys+3)
+    and %00001000
+    jr z, Menu_T_5  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+3) ;Test current frame
+    and %00001000
+    jr nz, Menu_T_5 ;Not pressed
+
+    set 3, (hl) ;Set key's bit
+
+Menu_T_5
+
+    ld a, (OldKeys+3)
+    and %00010000
+    jr z, Menu_T_6  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+3) ;Test current frame
+    and %00010000
+    jr nz, Menu_T_6 ;Not pressed
+
+    set 2, (hl) ;Set key's bit
+
+Menu_T_6
+
+    ld a, (OldKeys+4)
+    and %00010000
+    jr z, Menu_T_7  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+4) ;Test current frame
+    and %00010000
+    jr nz, Menu_T_7 ;Not pressed
+
+    set 1, (hl) ;Set key's bit
+
+Menu_T_7
+
+    ld a, (OldKeys+4)
+    and %00001000
+    jr z, Menu_T_8  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+4) ;Test current frame
+    and %00001000
+    jr nz, Menu_T_8 ;Not pressed
+
+    set 0, (hl) ;Set key's bit
+
+Menu_T_8
+
+    inc hl  ;Filled first bytr of buffer
+
+    ld a, (OldKeys+4)
+    and %00000100
+    jr z, Menu_T_9  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+4) ;Test current frame
+    and %00000100
+    jr nz, Menu_T_9 ;Not pressed
+
+    set 7, (hl) ;Set key's bit
+
+Menu_T_9
+
+    ld a, (OldKeys+4)
+    and %00000010
+    jr z, Menu_T_0  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+4) ;Test current frame
+    and %00000010
+    jr nz, Menu_T_0 ;Not pressed
+
+    set 6, (hl) ;Set key's bit
+
+Menu_T_0
+
+    ld a, (OldKeys+4)
+    and %00000001
+    jr z, Menu_T_A  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+4) ;Test current frame
+    and %00000001
+    jr nz, Menu_T_A ;Not pressed
+
+    set 5, (hl) ;Set key's bit
+
+Menu_T_A
+
+    ld a, (OldKeys+1)
+    and %00000001
+    jr z, Menu_T_B  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+1) ;Test current frame
+    and %00000001
+    jr nz, Menu_T_B ;Not pressed
+
+    set 4, (hl) ;Set key's 
     
-    ld a, 0
+Menu_T_B
+
+    ld a, (OldKeys+6)
+    and %00010000
+    jr z, Menu_T_C  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+6) ;Test current frame
+    and %00010000
+    jr nz, Menu_T_C ;Not pressed
+
+    set 3, (hl) ;Set key's bit
+
+Menu_T_C
+
+    ld a, (OldKeys)
+    and %00001000
+    jr z, Menu_T_D  ;Pressed already, skip to next check
+
+    ld a, (NewKeys) ;Test current frame
+    and %00001000
+    jr nz, Menu_T_D ;Not pressed
+
+    set 2, (hl) ;Set key's bit
+
+Menu_T_D
+
+    ld a, (OldKeys+1)
+    and %00000100
+    jr z, Menu_T_E  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+1) ;Test current frame
+    and %00000100
+    jr nz, Menu_T_E ;Not pressed
+
+    set 1, (hl) ;Set key's bit
+
+Menu_T_E
+
+    ld a, (OldKeys+2)
+    and %00000100
+    jr z, Menu_T_F  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+2) ;Test current frame
+    and %00000100
+    jr nz, Menu_T_F ;Not pressed
+
+    set 0, (hl) ;Set key's bit
+
+Menu_T_F
+
+    inc hl
+
+    ld a, (OldKeys+1)
+    and %00001000
+    jr z, Menu_T_Enter  ;Pressed already, skip to next check
+
+    ld a, (NewKeys+1) ;Test current frame
+    and %00001000
+    jr nz, Menu_T_Enter ;Not pressed
+
+    set 7, (hl) ;Set key's bit
+
+Menu_T_Enter
+
+    ld a, (OldKeys+5)
+    and %00000001
+    jr z, Menu_UpdateState ;Pressed already, skip to next check
+
+    ld a, (NewKeys+5) ;Test current frame
+    and %00000001
+    jr nz, Menu_UpdateState ;Not pressed
+
+    set 6, (hl) ;Set key's bit
+
+Menu_UpdateState
+
+    ld a, (hl)
+    dec hl
+    or (hl)
+    dec hl
+    or (hl) ;Check  if any keys pressed
+
+    jp z, Exit_Int
+
+    ld a, $F0   ;Signal keys have been pressed
+    ld (State), a
+    jp Exit_Int
+
+Calculating
+
+    ld a, (NewKeys+6)
+    and %00000001
+    jp nz, Exit_Int
+
+    ld a, $FF
     ld (State), a
     jp Exit_Int
 
 Finished_Calc
+
+    ld a, (NewKeys+5)
+    and %00000001
+    jp nz, Exit_Int
 
     ld a, $FF
     ld (State), a
     jp Exit_Int
 
 Exit_Int
+
+    pop hl
     pop bc
     pop af
     ei
@@ -50,7 +354,7 @@ Exit_Int
     
     org ($FFF4)
     
-    jp Interrupt_Timer.Start
+    jp Interrupt_ReadKeys.Start
     
     
     ENDMODULE

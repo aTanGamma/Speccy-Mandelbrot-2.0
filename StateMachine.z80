@@ -8,7 +8,48 @@ Start
     ld a, $39   ;Makes interrupt jump to somewhere in page $39xx - All bytes are $FF
     ld i, a     ;CPU then goes to location $FFFF to execute a relative jump, which happens to make jr $F3, so a jp can be put 13 bytes behind $FFFF
 
-    ei
+Setup_Variables
+
+;   List of Variables to setup
+
+;   Cursor_Pos = $8080  ;Pointer to table of pointers for boxes 
+;   Initial_X = $8082
+;   X_Step = $8084
+;   Initial_Y = $8086
+;   Y_Step = $8088      ;Initial X/Y position and Step values for drawing
+;   Sound_Enable = $808A
+;   Render_Mode = $808B ;Resolution/colour settings
+;   Max_n = $808C
+;   Shading_Bright = $808D
+;   Shading_Mid = $808E
+;   Shaiding_Dark = $808F
+
+    ;ld bc, _MENU_BOX_DATA
+    ;ld (Cursor_Pos), a
+    
+    ld bc, $E000
+    ld (Initial_X), bc
+    ld bc, $0050
+    ld (X_Step), bc
+    ld bc, $1000
+    ld (Initial_Y), bc
+    ld bc, $FFAB
+    ld (Y_Step), bc
+
+    ld a, 2
+    ld (Render_Mode), a
+
+    ld a, $14
+    ld (Sound_Enable), a
+
+    ld a, 32
+    ld (Max_n), a
+    ld a, 24
+    ld (Shading_Bright), a
+    ld a, 16
+    ld (Shading_Mid), a
+    ld a, 8
+    ld (Shading_Dark), a
 
 Draw_Menu_Init
 
@@ -19,16 +60,43 @@ Draw_Menu_Init
     ld a, $FF   ;Nothing pressed, menu screen
     ld (State), a
 
-Menu_Wait4Key
+    ei
+
+Menu_CheckState
 
     ld a, (State)   ;List of places to jump to
     cp 0
-    jp nz, Menu_Wait4Key
+    jp z, Calculate.Setup
 
-    jp Calculate.Setup
+    cp $F0
+    call z, Menu_Update.Menu_Key_Pressed
 
-
-    jp Draw_Menu_Init
+    jp Menu_CheckState
 
     ENDMODULE
 
+    MODULE Menu_Update
+
+Menu_Key_Pressed    ;Decide what keys have been pressed and what to do
+
+    di
+
+    ld a, $FF
+    ld (State), a   ;Acknowledge key press
+
+    ld a, (PressedKeys+2)
+    or a
+    jr z, 1F
+
+    bit 6, a
+    jr z, 1F
+    xor a
+    ld (State), a
+1
+    
+    ei
+    ret
+
+
+
+    ENDMODULE

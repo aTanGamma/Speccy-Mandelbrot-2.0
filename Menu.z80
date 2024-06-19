@@ -70,5 +70,36 @@ Blit_Colours
 
     ENDMODULE
 
+    MODULE Menu_BoxData
 
+;   Database of menu items stored as
+;   X, Y, ID, Type (see below)
 
+    BYTE    07, 07, 00, 00  ;X_Pos
+    BYTE    15, 07, 01, 00  ;X_Step
+    BYTE    07, 09, 02, 00  ;Y_Pos
+    BYTE    15, 09, 03, 00  ;Y_Step
+
+    BYTE    23, 07, 04, 01  ;Max iterations  
+    
+    BYTE    16, 09, 05, 02  ;Sound enable
+
+    BYTE    11, 11, 06, 03  ;1px mode
+    BYTE    15, 11, 07, 03  ;2px mode
+    BYTE    19, 11, 08, 03  ;4px mode
+    BYTE    23, 11, 09, 03  ;8px mode
+
+    BYTE    09, 15, 10, 01  ;Shading Low
+    BYTE    16, 15, 11, 01  ;Shading Low
+    BYTE    23, 15, 12, 01  ;Shading Low
+
+    BYTE    24, 20, 13, 04  ;Go button
+
+;   Types:
+;   00 = "$_.___"   $ + 4 characters text entry, flash this and 4 characters to right
+;   01 = "$__"      $ + 2 characters text entry, flash this and 2 characters to right
+;   02 = ■          Tickbox (State held elsewhere)
+;   03 = ■          Radio button with all other type == 3
+;   04 = "Run"      Starts computation
+
+    ENDMODULE

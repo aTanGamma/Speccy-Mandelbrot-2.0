@@ -5,33 +5,71 @@ Start
 ;   Plots a given byte to the screen at a given line and byte no.
 
 ;   Inputs: a = byte to plot
-;           b = X (Byte on screen)
-;           c = Y (Scanline)
+;           b = Y (Scanline)
+;           c = X (Screen byte)
 
 ;   Constructs screen address into hl
 
     push af  ;Push a for safekeeping
     
-    ld a, c 
+    ld a, b
     and %00111000   ;Extract Y5,4,3
     .2 rla   ;Shift to top of byte
-    add b   ;Low-byte finished
-    ld l, a ; l holds final value
+    or c   ;Low-byte finished
+    ld c, a ; l holds final value
 
-    ld a, c
+    ld a, b
     and %00000111   ;Extract Y2,1,0
-    ld b, a ;Half finished
+    ld h, a ;Half finished
     
-    ld a, c
+    ld a, b
     and %11000000   ;Extract Y7,6
     .3 rra   ;Move to correct position
-    add b   ;All X/Y bits in place
+    or h   ;All X/Y bits in place
+    or %01000000   ;Finish by putting upper bits in
+    ld b, a ;Finished address in hl
+
+    pop af   ;Return a
+
+    ld (bc), a    ;store byte in memory
+
+    ret
+
+    ENDMODULE
+
+    MODULE XOR_Byte_Plotter
+Start
+;   Plots a given byte to the screen at a given line and byte no.
+
+;   Inputs: a = byte to plot
+;           b = Y (Scanline)
+;           c = X (Screen byte)
+
+;   Constructs screen address into hl
+
+    push af  ;Push a for safekeeping
+    
+    ld a, b
+    and %00111000   ;Extract Y5,4,3
+    .2 rla   ;Shift to top of byte
+    or c   ;Low-byte finished
+    ld l, a ; l holds final value
+
+    ld a, b
+    and %00000111   ;Extract Y2,1,0
+    ld h, a ;Half finished
+    
+    ld a, b
+    and %11000000   ;Extract Y7,6
+    .3 rra   ;Move to correct position
+    or h   ;All X/Y bits in place
     or %01000000   ;Finish by putting upper bits in
     ld h, a ;Finished address in hl
 
     pop af   ;Return a
 
-    ld (hl), a    ;store byte in
+    xor (hl), a ;Xor byte
+    ld (hl), a  ;store byte in memory
 
     ret
 

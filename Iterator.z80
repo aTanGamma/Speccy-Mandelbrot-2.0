@@ -94,7 +94,7 @@ Exit_2pop
     
     pop af
 
-    ret ;Number of iterations returned in a    
+    jp Calculate.Determine_Pixel_State ;Number of iterations returned in a    
 
 Check_Radius
 
@@ -120,7 +120,7 @@ Exit_1pop
     
     pop af
 
-    ret ;Number of iterations returned in a  
+    jp Calculate.Determine_Pixel_State ;Number of iterations returned in a  
 
 Calc_Next_X
 
@@ -173,7 +173,10 @@ Count_Iterations
 
     pop af
     inc a
-    cp _MAX_ITERATIONS
+    ld d, a
+    ld a, (Max_n)
+    cp d
+    ld a, d
     push af
 
     jp nz, Calc_X2
@@ -182,12 +185,12 @@ Exit
 
 ;   Iterations = 51 - b
 
-    xor a
+    ld a, 4
     out (254), a  ;Set border colour Black  (Shows program working)
     
     pop af
 
-    ret ;Number of iterations returned in a
+    jp Calculate.Determine_Pixel_State  ;Number of iterations returned in a
 
 
     ENDMODULE

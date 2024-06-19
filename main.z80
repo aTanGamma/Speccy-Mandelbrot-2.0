@@ -10,9 +10,9 @@
 Current_X = $8000   ;Location of current X coord (16-bit, fixed point)
 Current_Y = $8002   ;Location of current Y coord (16-bit, fixed point)
 
-X_Byte = $8006  ;Screen byte number (0 - 31) ──┐
-X_Pixel = $8004 ;The X-pos in px on the screen ├───> For working out Screen Address
-Line_No = $8005 ;Scanline number ──────────────┘
+X_Pixel = $8004 ;The X-pos in px on the screen ─┐
+X_Byte = $8005  ;Screen byte number (0 - 31)    ├───> For working out Screen Address
+Line_No = $8006 ;Scanline number ───────────────┘
 ;^ In reverse order for loading into bc
 
 Byte_To_Fill_0 = $8007
@@ -21,32 +21,46 @@ Byte_To_Fill_1 = $8008
 No_Iterations = $8009
 
 State = $800A   ;Used to determine what to do
-
-LastKeys = $800B    ;3 bytes for all keys pressed last frame to stop multipressing
+OldKeys = $800B     ;7 bytes for all keys pressed last frame to stop multipressing
                     ;Hexadecimal digits, break and enter
+NewKeys = $8012     ;7 Bytes for keys pressed this frame
+PressedKeys = $8020 ;3 bytes to hold which keys have been pressed (only if in menu state)
+
+;Menu variables
+
+Cursor_Pos = $8080  ;Pointer to box data
+Initial_X = $8082
+X_Step = $8084
+Initial_Y = $8086
+Y_Step = $8088      ;Initial X/Y position and Step values for drawing
+
+Sound_Enable = $808A
+
+Render_Mode = $808B ;Resolution/colour settings
+
+Max_n = $808C
+Shading_Bright = $808D
+Shading_Mid = $808E
+Shading_Dark = $808F
+
 
 /*----= Definitions =----*/
 
-
+/*
+;Whole Mandelbrot
 _INITIAL_X = $E000  ;-2
 _INITIAL_Y = $1000  ;+1
 
 _X_STEP_SIZE = $0050    ;+ 2.5/128 = 0000.0000 0011 0000 
 _Y_STEP_SIZE = $FFAB    ;- 2/96    = 1111.1111 1010 1011
 
-/*
+;Zoom on interesting bit
 _INITIAL_X = $F000  ;- 1.0000 = 1111.0000 0000 0000
 _INITIAL_Y = $0500  ;+ 0.3125 = 0000.0101 0000 0000
 
 _X_STEP_SIZE = $0004    ;+ 0.50/256 = 0000.0000 0000 0100
 _Y_STEP_SIZE = $FFFC    ;- 0.25/96 = 1111.1111 1111 1100
 */
-
-_BORDER_COLOUR = 0 ;Black border
-
-_MAX_ITERATIONS = 16
-_MIDS_THRESHOLD = 12
-_DARK_THRESHOLD = 8
 
 _SCREEN_BITMAP_START = $4000
 _BITMAP_LENGTH = $1800
@@ -93,11 +107,6 @@ Set_Attributes
 
     ldir
 
-Set_Border
-
-    ld a, _BORDER_COLOUR
-    out (254), a  ;Set border colour Black
-
 Preset_Variables
 
     ld a, 0
@@ -107,29 +116,41 @@ Preset_Variables
     ld (Byte_To_Fill_0), a
     ld (Byte_To_Fill_1), a    ;Reset screen stuff
 
-    ld bc, _INITIAL_X
+    ld bc, (Initial_X)
     ld (Current_X),bc
     ld (Iterator.Working_X),bc
 
-    ld bc, _INITIAL_Y
+    ld bc, (Initial_Y)
     ld (Current_Y),bc
     ld (Iterator.Working_Y),bc
 
-Iterator
+Call_Iterator
 
-    call Iterator.Init  ;Returns #iterations in a
+    ld a, (State)   ;Check if state has changed
+    or a
+    jp nz, State_Machine.Draw_Menu_Init
+
+    jp Iterator.Init  ;Returns #iterations in a
 
 Determine_Pixel_State
 
-    cp _MAX_ITERATIONS
-
+    ld b, a ;From now, b holds number of iterations
+    
+    ld a, (Max_n)
+    cp b
     jr z, Rotate_In_2_Pixels  ;Skip if iterations < MAX
 
-    cp _MIDS_THRESHOLD ;Compare to threshold to see whether to shade
-    jr nc, Rotate_In_Mid_Shaded
+    ld a, (Shading_Bright)
+    cp b ;Compare to threshold to see whether to shade
+    jr c, Rotate_In_Bright_Shaded
 
-    cp _DARK_THRESHOLD ;Compare to threshold to see whether to shade
-    jr nc, Rotate_In_Dark_Shaded
+    ld a, (Shading_Mid)
+    cp b ;Compare to threshold to see whether to shade
+    jr c, Rotate_In_Mid_Shaded
+
+    ld a, (Shading_Dark)
+    cp b ;Compare to threshold to see whether to shade
+    jr c, Rotate_In_Dark_Shaded
 
     jp Rotate_In_2_Blank
 
@@ -144,6 +165,20 @@ Rotate_In_2_Pixels
     sll a
     sll a
     ld (Byte_To_Fill_1), a    ;Put 2 pixel in a holding byte (will be plotted every 4 px)
+
+    jp Inc_X_Px
+
+Rotate_In_Bright_Shaded    ;sll is fine, just undocumented for some reason
+
+    ld a, (Byte_To_Fill_0)
+    sla a
+    sll a
+    ld (Byte_To_Fill_0), a
+
+    ld a, (Byte_To_Fill_1)
+    sll a
+    sll a
+    ld (Byte_To_Fill_1), a  ;Put 2 pixel in a holding byte (will be plotted every 4 px)
 
     jp Inc_X_Px
 
@@ -189,11 +224,21 @@ Rotate_In_2_Blank
 
 Inc_X_Px
 
+    ld a, (Sound_Enable)
+    or a
+    jr z, 1F
+
+    di  ;Stops any popping happening
+
     ld a, %00010110
     out ($FE), a
     .8 nop
     ld a, 4
     out ($FE), a    ;Sound code
+    
+    ei  ;Reenable interrupts
+
+1   ;No sound chosen
 
     ld hl, X_Pixel    ;Increment Pixel position
     inc (hl)
@@ -205,22 +250,22 @@ Inc_X_Px
 Step_X_Coord
 
     ld bc, (Current_X)
-    ld hl, _X_STEP_SIZE
+    ld hl, (X_Step)
 
     add hl, bc  ;Step X coord to next pixel
 
     ld (Current_X), hl  ;Return to memory
 
-    jp Iterator ;Now calculate the next pixel
+    jp Call_Iterator ;Now calculate the next pixel
 
 Inc_X_Byte
 
     ld a, (Byte_To_Fill_0)
-    ld bc, (Line_No)
+    ld bc, (X_Byte)
     call Byte_Plotter.Start ;Plot finished byte
     ld a, (Byte_To_Fill_1)
-    ld bc, (Line_No)
-    inc c
+    ld bc, (X_Byte)
+    inc b
     call Byte_Plotter.Start ;Duplicate 1 line down
 
     xor a
@@ -248,19 +293,19 @@ Inc_Line_No
 
 Reset_X_Pos
 
-    ld bc, _INITIAL_X
+    ld bc, (Initial_X)
     ld (Current_X), bc  ;Reset X_Pos
 
 Step_Y_Coord
 
     ld bc, (Current_Y)
-    ld hl, _Y_STEP_SIZE
+    ld hl, (Y_Step)
 
     add hl, bc
 
     ld (Current_Y), hl
 
-    jp Iterator
+    jp Call_Iterator
 
 Done
 
@@ -284,8 +329,7 @@ Calc_Done_Wait4Key
 
     INCLUDE "Interrupt_Stuff.z80"
 
-    INCLUDE "Menu.z80"
-
+    INCLUDE "Menu.z80"    
+    
     SAVESNA "Mandel.sna", State_Machine.Start
-
     SAVETAP "Mandel.tap", State_Machine.Start
