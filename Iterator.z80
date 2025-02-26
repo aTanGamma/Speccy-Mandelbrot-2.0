@@ -76,6 +76,7 @@ Calc_X2
 Calc_Y2
 
     ld bc, (Working_Y)
+    ld de, bc
 
     ld a, 2
     out ($FE), a    ;Red Border
@@ -147,9 +148,14 @@ Calc_Next_Y
     ld a, 7
     out ($FE), a    ;White Border
 
-    call Table_Mult.Start
+    ld bc, (Working_X)
+    ld de, (Working_Y)
 
-;   bc holds answers
+    call FasterMult.Start
+
+;   de holds answers
+
+    ld bc, de
 
     sla c
     rl b    ;bc = 2 * X * Y + Y0

@@ -109,6 +109,9 @@ Set_Attributes
 
 Preset_Variables
 
+    ld a, 255
+    ld (Max_n), a
+
     ld a, 0
     ld (X_Byte), a
     ld (X_Pixel), a

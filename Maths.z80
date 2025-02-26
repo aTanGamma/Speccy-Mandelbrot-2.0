@@ -10,6 +10,7 @@ Start
 
 ;   Constructs screen address into hl
 
+
     push af  ;Push a for safekeeping
     
     ld a, b
@@ -140,6 +141,272 @@ Plot_Bytes
 
     ENDMODULE
 
+    
+    MODULE FasterMult
+
+;   Stolen shamelessly from https://www.cpcwiki.eu/index.php/Programming:Integer_Multiplication
+
+;Multiplies bc*de
+;   Returns answer in dehl
+
+@FasterMult.Start
+
+    ld l, 0
+
+;Sign of bc
+    
+    ld a, b
+    rlca
+    jr nc, 1F
+
+    inc l
+    
+    ld a, c
+    cpl
+    ld c, a
+    ld a, b
+    cpl
+    ld b, a
+
+    inc bc
+1
+
+;Sign of de
+    
+    ld a, d
+    rlca
+    jr nc, 2F
+
+    inc l
+    
+    ld a, e
+    cpl
+    ld e, a
+    ld a, d
+    cpl
+    ld d, a
+
+    inc de
+2
+
+    ld a, l
+    ex af, af'    ;store #negs for later
+
+MulStart
+    ld hl,0
+
+    sla	e		; optimised 1st iteration
+    rl	d
+    jr	nc, 1F
+    ld	h, b
+    ld	l, c
+
+1
+Muluw
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+    add hl,hl
+    rl e
+    rl d
+    jr nc, 1F
+
+    add hl, bc
+    jr nc, 1F
+
+    inc de
+1
+
+Shift_Ans
+
+    sla l
+    rl h
+    rl e
+    rl d
+
+    sla l
+    rl h
+    rl e
+    rl d
+
+    sla l
+    rl h
+    rl e
+    rl d
+
+    sla l
+    rl h
+    rl e
+    rl d    ;Shift properly
+
+Fix_Sign
+
+    ex af, af'
+    rrca
+    ret nc  ;Leave if answer is ok
+
+    ld a, l
+    cpl
+    add 1
+    ld l, a
+
+    ld a, h
+    cpl
+    adc 0
+    ld h, a
+
+    ld a, e
+    cpl
+    adc 0
+    ld e, a
+
+    ld a, d
+    cpl
+    adc 0
+    ld d, a
+
+    ret
+ 
+    ENDMODULE
+
+/*
     MODULE Table_Mult   ;Uses a table to speed up multiplications
 ;   Multiplies using Quarter Squares in a table
 /*---------= Variables =---------*/
@@ -155,7 +422,7 @@ DiffTable = $9400
 
 /*---------= Code =---------*/
 
-Start
+@Table_Mult.Start
 
     xor a
 
@@ -509,7 +776,7 @@ Sum_Temp_Answers
 
 Shift_Anwser
    
-    sla e   ;Shift answer up by 4 bytes to isolate useful bits
+    sla e   ;Shift answer up by 4 bits to isolate useful bits
     rl d
     rl c
     rl b
@@ -555,6 +822,8 @@ Return_Ans
 
     ENDMODULE
 
+*/
+
     MODULE Fast_Square  ;Pass in number in bc
 
 /*---------= Variables =---------*/
@@ -578,8 +847,9 @@ Start
 
 Make_Num_Pos
 
-    bit 7, b
-    jr z, Get_A2
+    ld a, b
+    rlca
+    jr nc, Get_A2
 
     ld a, b
     cpl
@@ -605,20 +875,17 @@ Get_A2
     jp Get_B2
 
 1
-    sla a   ;Double for 16-bit values
+    add a   ;Double for 16-bit values
     jr nc, 2F
     inc h
 2
     ld l, a
     
-    ld a, (hl)  ;Get lo-byte
-    ld e, a ;Put in e
+    ld e, (hl)  ;Get lo-byte
     inc l
-    ld a, (hl)  ;Get Hi-byte
-    ld d, a ;Put in d
-    ld hl, de
-    push hl ;Store to A^2
-
+    ld d, (hl)  ;Get Hi-byte
+    
+    push de ;Store to A^2
 
 Get_B2
     ld h, $98
@@ -633,74 +900,70 @@ Get_B2
     jp Get_Sum_AB
 
 1
-    sla a
+    add a
     jr nc, 2F
     inc h
 2
     ld l, a
     
-    ld a, (hl)
-    ld e, a
+    ld e, (hl)
     inc l
-    ld a, (hl)
-    ld d, a
-    ld hl, de
-    push hl ;As above for B^2
+    ld d, (hl)
+    push de ;As above for B^2
 
 Get_Sum_AB
 
-    ld hl, $9000
-    ld de, 0
+    ld h, high($9000)
+
     ld a, b
     add c
+
     jr nc, 1F
-    inc d
+    inc h
+    inc h
 1
-    ld e, a
-    sla e
-    rl d
+    add a
+    jr nc, 1F
+    inc h
+1
+    ld l, a ;Get final pointer for Aa+Bb
 
-    add hl, de  ;Get final pointer for Aa+Bb
-
-    ld a, (hl)
-    ld e, a
+    ld e, (hl)
     inc hl
-    ld a, (hl)
-    ld d, a
+    ld d, (hl)
 
 Get_Diff_AB
 
-    ld hl, $9400
+    ld h, high($9400)
 
     ld a, b
     sub c
-    ld bc, 0    ;Finally don't need bc any more
-    jr nc, 1F
 
+;   Finally don't need bc any more
+    jr nc, 1F
     neg
 1
-    ld c, a
-    sla c
-    rl b    ;Double pointer
-
-    add hl, bc
     
-    ld a, (hl)
-    ld c, a
-    inc hl
-    ld a, (hl)
-    ld b, a
+    add a
+    jr nc, 1F
+    inc h
+1
 
-    ld hl, de
+    ld l, a
+    
+    ld c, (hl)
+    inc hl
+    ld b, (hl)
+
+    ex de, hl
     or a
     sbc hl, bc  ;Get AB
 
-    sla l
-    rl h    ;Double middle bytes
+    add hl, hl
 
 Compile_Ans
 
-                ;hl = 2AB
+    ;hl = 2AB
     pop de ;de = B^2
 
     ld a, l
